@@ -6,7 +6,7 @@ cor(data)
 #models
 modelVach = lm(vach ~ momed + ssal + whcol + ses + tverb, data = data)
 modelMomed = lm(momed ~ ssal + whcol + ses + tverb, data = data)
-momedResids = modelMomedReg$residuals
+momedResids = modelMomed$residuals
 modelAdjMomed = lm(vach ~ momedResids, data = data)
 
 #summaries

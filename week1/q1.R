@@ -17,3 +17,7 @@ modelOutrelief = lm(paup ~ outrelief, data=deltaData)
 mtable(modelFull, modelOutrelief, modelOld, modelPop)
 #old is not significant but pop is
 
+anova(modelOutrelief, modelFull) #reject the null
+
+
+
