@@ -1,5 +1,4 @@
 library(GGally) #for ggpairs
-library(GeneNT)
 
 data = read.table('q2_data', head=T)
 attach(data)

@@ -1,7 +1,7 @@
 library(multilevel)
 library(mediation)
 
-data = read.table('http://www-stat.stanford.edu/~rag/stat209/coleman320.dat', header=T)
+data = read.table("http://www-stat.stanford.edu/~rag/stat209/coleman.dat", header=T)
 
 # Let us take another look at the momed, this time asking the more 
 # modern question of a mediating variable in the presumed effects of 
@@ -11,8 +11,6 @@ data = read.table('http://www-stat.stanford.edu/~rag/stat209/coleman320.dat', he
 
 attach(data)
 
-sobel(momed, tverb, vach) #large and significant
-
 #using 'mediation'
 
 yx = lm(vach ~ momed + tverb)
@@ -20,3 +18,5 @@ mx = lm(tverb ~ momed)
 analysis = mediate(mx, yx, treat="momed", mediator="tverb") #mediate is slow!
 summary(analysis) #cool, matches sobel test output
 plot(analysis)
+
+sobel(momed, tverb, vach) #large and significant
