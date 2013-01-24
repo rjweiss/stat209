@@ -1,4 +1,5 @@
 library(GGally) #for ggpairs
+library(GeneNT)
 
 data = read.table('q2_data', head=T)
 attach(data)
@@ -15,6 +16,11 @@ cor.test(Y, Z)
 
 XZ <- lm(X ~ Z)
 YZ <- lm(Y ~ Z)
+
+#partial correlation = fit the linear model and look at the cor between the residuals
+
+cor(resid(XZ), resid(YZ))
+cor.test(resid(XZ), resid(YZ))
 
 YX.Z <- lm(Y ~ X + Z)
 

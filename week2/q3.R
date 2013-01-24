@@ -1,3 +1,6 @@
+library(multilevel)
+library(mediation)
+
 data = read.table('http://www-stat.stanford.edu/~rag/stat209/coleman320.dat', header=T)
 
 # Let us take another look at the momed, this time asking the more 
