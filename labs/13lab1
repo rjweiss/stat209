@@ -1,0 +1,555 @@
+Stat209   Computing Lab 1  Multiple Regression Basics      1/18/13
+
+
+
+STAT 209  D Rogosa
+
+Computational Lab 1.  Some Multiple Regression Basics
+
+The content is a hodge-podge of regression activities following on class topics.
+
+
+note: the format of this intro lab is chatter, with R-command and output interspersed.
+so you can read through (or read a section) and then try it on your own, just
+by cutting and pasting commands. Trust that there are more elegant ways of doing
+any of these tasks, but the intent is basic instruction, not showing off R
+This lab covers course content weeks 1-2 (also relevant to week 3)
+  actual R commands begin with >
+ # designates a comment in the R-session
+
+
+Data from Verzani UsingR Package
+babies Mothers and their babies data
+Description
+A collection of variables taken for each new mother in a Child and Health Development Study.
+Usage data(babies)
+Format A data frame with 1,236 observations on the following 23 variables.
+
+Variables in data file
+id              identification number
+pluralty        5= single fetus
+outcome         1= live birth that survived at least 28 days
+date            birth date where 1096=January1,1961
+gestation       length of gestation in days
+sex             infant’s sex 1=male 2=female 9=unknown
+wt              birth weight in ounces (999 unknown)
+parity          total number of previous pregnancies including fetal deaths and still births, 99=unknown
+race            mother’s race 0-5=white 6=mex 7=black 8=asian 9=mixed 99=unknown
+age             mother’s age in years at termination of pregnancy, 99=unknown
+ed              mother’s education 0= less than 8th grade, 1 = 8th -12th grade - did not graduate, 2= HS
+graduate–       no other schooling , 3= HS+trade, 4=HS+some college 5= College graduate, 6&7 Trade school HS unclear, 9=unknown
+ht              mother’s height in inches to the last completed inch 99=unknown
+wt1             mother prepregnancy wt in pounds, 999=unknown
+drace           father’s race, coding same as mother’s race.
+dage            father’s age, coding same as mother’s age.
+ded             father’s education, coding same as mother’s education.
+dht             father’s height, coding same as for mother’s height
+dwt             father’s weight coding same as for mother’s weight
+marital         1=married, 2= legally separated, 3= divorced, 4=widowed, 5=never married
+inc             family yearly income in $2500 increments 0 = under 2500, 1=2500-4999, ..., 8= 12,500-14,999, 9=15000+, 98=unknown, 99=not asked
+smoke           does mother smoke? 0=never, 1= smokes now, 2=until current pregnancy, 3=once did, not now, 9=unknown
+time            If mother quit, how long ago? 0=never smoked, 1=still smokes, 2=during current preg, 3=within 1 yr, 4= 1 to 2 years ago, 5= 2 to 3 yr ago, 6= 3 to 4 yrs ago, 7=5 to 9yrs ago, 8=10+yrs ago, 9=quit and don’t know, 98=unknown, 99=not asked
+number          number of cigs smoked per day for past and current smokers 0=never, 1=1-4,2=5-9, 3=10-14, 4=15-19, 5=20-29, 6=30-39, 7=40-60, 8=60+, 9=smoke but don’t know,98=unknown,99=not asked
+
+Source
+This dataset is found from http://www.stat.berkeley.edu/users/statlabs/labs.html. 
+It accompanies the excellent text Stat Labs: Mathematical Statistics through Applications
+Springer-Verlag (2001) by Deborah Nolan and Terry Speed.
+We have the data in
+   http://www-stat.stanford.edu/~rag/stat141/exs/babies.dat
+
+TASK 1: Multiple Regression
+Preliminary: Read in babies dataset and get clean subset of variables, 
+
+> babies = read.table("http://www-stat.stanford.edu/~rag/stat141/exs/babies.dat", header = T)
+> #read in full babies data set
+> summary(babies)
+       id          pluralty    outcome       date        gestation          sex          wt       
+ Min.   :  15   Min.   :5   Min.   :1   Min.   :1350   Min.   :148.0   Min.   :1   Min.   : 55.0  
+ 1st Qu.:5286   1st Qu.:5   1st Qu.:1   1st Qu.:1444   1st Qu.:272.0   1st Qu.:1   1st Qu.:108.8  
+ Median :6730   Median :5   Median :1   Median :1540   Median :280.0   Median :1   Median :120.0  
+ Mean   :6001   Mean   :5   Mean   :1   Mean   :1536   Mean   :286.9   Mean   :1   Mean   :119.6  
+ 3rd Qu.:7583   3rd Qu.:5   3rd Qu.:1   3rd Qu.:1627   3rd Qu.:288.0   3rd Qu.:1   3rd Qu.:131.0  
+ Max.   :9263   Max.   :5   Max.   :1   Max.   :1714   Max.   :999.0   Max.   :1   Max.   :176.0  
+     parity            race             age              ed              ht             wt1       
+ Min.   : 0.000   Min.   : 0.000   Min.   :15.00   Min.   :0.000   Min.   :53.00   Min.   : 87.0  
+ 1st Qu.: 0.000   1st Qu.: 0.000   1st Qu.:23.00   1st Qu.:2.000   1st Qu.:62.00   1st Qu.:115.0  
+ Median : 1.000   Median : 3.000   Median :26.00   Median :2.000   Median :64.00   Median :126.0  
+ Mean   : 1.932   Mean   : 3.206   Mean   :27.37   Mean   :2.922   Mean   :64.67   Mean   :154.0  
+ 3rd Qu.: 3.000   3rd Qu.: 7.000   3rd Qu.:31.00   3rd Qu.:4.000   3rd Qu.:66.00   3rd Qu.:140.0  
+ Max.   :13.000   Max.   :99.000   Max.   :99.00   Max.   :9.000   Max.   :99.00   Max.   :999.0  
+     drace             dage            ded             dht             dwt           marital     
+ Min.   : 0.000   Min.   :18.00   Min.   :0.000   Min.   :60.00   Min.   :110.0   Min.   :0.000  
+ 1st Qu.: 0.000   1st Qu.:25.00   1st Qu.:2.000   1st Qu.:70.00   1st Qu.:165.0   1st Qu.:1.000  
+ Median : 3.000   Median :29.00   Median :4.000   Median :73.00   Median :190.0   Median :1.000  
+ Mean   : 3.665   Mean   :30.74   Mean   :3.189   Mean   :81.67   Mean   :505.4   Mean   :1.038  
+ 3rd Qu.: 7.000   3rd Qu.:35.00   3rd Qu.:5.000   3rd Qu.:99.00   3rd Qu.:999.0   3rd Qu.:1.000  
+ Max.   :99.000   Max.   :99.00   Max.   :9.000   Max.   :99.00   Max.   :999.0   Max.   :5.000  
+      inc            smoke             time            number      
+ Min.   : 0.00   Min.   :0.0000   Min.   : 0.000   Min.   : 0.000  
+ 1st Qu.: 2.00   1st Qu.:0.0000   1st Qu.: 0.000   1st Qu.: 0.000  
+ Median : 4.00   Median :1.0000   Median : 1.000   Median : 1.000  
+ Mean   :13.16   Mean   :0.8681   Mean   : 1.748   Mean   : 2.604  
+ 3rd Qu.: 7.00   3rd Qu.:1.0000   3rd Qu.: 1.000   3rd Qu.: 3.000  
+ Max.   :98.00   Max.   :9.0000   Max.   :99.000   Max.   :98.000 
+ 
+> dim(babies)# dim tells you 1236 subjects, 23 vars
+[1] 1236   23
+> # but we have lots of missing data. Because this is a "basics" exercise, we will just
+    use cases with complete data, rather than imputation with "mice" package or equivalent
+> # since we have missing data, for the purposes of this Lab we want
+> # to clean those cases out and use a data set with complete data
+
+> #vars we want to use --arbitrary choices                                                  
+> # gestation length of gestation in days                                
+> # wt birth weight in ounces, 999 unknown                               
+> # age mother’s age in years at termination of pregnancy, 99=unknown    
+> # ht mother’s height in inches to the last completed inch, 99=unknown  
+> # wt1 mother pre-pregnancy weight in pounds, 999=unknown               
+> # dht father's height, coding same as for mother's height              
+> # dwt father's weight coding same as for mother's weight 
+
+>                                                                        
+> #create a new data set, a subset of the full data                      
+> subsetBabies = subset( babies, subset = gestation < 999 & wt1 < 999 & wt < 999 & ht < 99 & dwt < 999 & dht < 99 & age <99, select = c(gestation, wt, age, ht, wt1, dht, dwt) )
+
+> dim(subsetBabies)
+[1] 705   7
+> # so only 705 of the cases have complete data on the variables of interest, birthweight as outcome and 6 predictors
+# and none have missing data codes as seen below
+> summary(subsetBabies)
+   gestation           wt             age              ht             wt1             dht       
+ Min.   :148.0   Min.   : 55.0   Min.   :15.00   Min.   :54.00   Min.   : 87.0   Min.   :60.00  
+ 1st Qu.:272.0   1st Qu.:108.0   1st Qu.:23.00   1st Qu.:62.00   1st Qu.:115.0   1st Qu.:68.00  
+ Median :280.0   Median :120.0   Median :26.00   Median :64.00   Median :125.0   Median :71.00  
+ Mean   :279.2   Mean   :119.5   Mean   :27.39   Mean   :64.08   Mean   :128.8   Mean   :70.26  
+ 3rd Qu.:288.0   3rd Qu.:131.0   3rd Qu.:31.00   3rd Qu.:66.00   3rd Qu.:140.0   3rd Qu.:72.00  
+ Max.   :353.0   Max.   :176.0   Max.   :43.00   Max.   :72.00   Max.   :250.0   Max.   :78.00  
+      dwt       
+ Min.   :110.0  
+ 1st Qu.:155.0  
+ Median :170.0  
+ Mean   :171.2  
+ 3rd Qu.:185.0  
+ Max.   :260.0 
+
+# to get the 7x7 array of scatterplots use command
+pairs(subsetBabies)
+# see MB text 3rd ed p.175 Ireland race data, 2nd ed p.178 for 3x3 example, mice data
+
+> attach(subsetBabies)  # so we can refer directly to variable names in dataset
+> names(subsetBabies)                                                          
+[1] "gestation" "wt"        "age"       "ht"        "wt1"       "dht"       "dwt"      
+
+# wt will be the outcome variable in the regression demonstrations
+> #just to get a feel for the data, here's 5-number summary for wt, and correlations among all vars
+> quantile(wt)
+  0%  25%  50%  75% 100% 
+  55  108  120  131  176 
+> length(wt) # number of cases
+[1] 705
+
+> cor(subsetBabies) # correlation matrix
+            gestation         wt          age         ht        wt1         dht         dwt
+gestation  1.00000000 0.39500543 -0.059611693 0.02581315 0.06386776  0.01191594 0.010700934
+wt         0.39500543 1.00000000  0.047794571 0.21614525 0.16249354  0.09822157 0.141033572
+age       -0.05961169 0.04779457  1.000000000 0.01852681 0.19244242 -0.05694164 0.003239663
+ht         0.02581315 0.21614525  0.018526813 1.00000000 0.42233662  0.33288888 0.258235062
+wt1        0.06386776 0.16249354  0.192442416 0.42233662 1.00000000  0.13149788 0.197935408
+dht        0.01191594 0.09822157 -0.056941642 0.33288888 0.13149788  1.00000000 0.542304515
+dwt        0.01070093 0.14103357  0.003239663 0.25823506 0.19793541  0.54230452 1.000000000
+>                                                                               
+>                                                                               
+> #  Multiple Regression using the data                                  
+>                                                                               
+> fullreg = lm( wt ~ gestation + age + ht + wt1 + dht + dwt, data= subsetBabies)
+> summary(fullreg)                                                              
+
+Call:
+lm(formula = wt ~ gestation + age + ht + wt1 + dht + dwt, data = subsetBabies)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-48.6889 -10.6368   0.2207  10.1633  54.7421 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -101.00106   22.93807  -4.403 1.23e-05 ***
+gestation      0.45077    0.03893  11.578  < 2e-16 ***
+age            0.18464    0.10706   1.725   0.0850 .  
+ht             1.23605    0.28406   4.351 1.56e-05 ***
+wt1            0.03357    0.03396   0.989   0.3232    
+dht           -0.09882    0.26615  -0.371   0.7105    
+dwt            0.07619    0.03296   2.312   0.0211 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+
+Residual standard error: 16.42 on 698 degrees of freedom
+Multiple R-Squared: 0.2118,     Adjusted R-squared: 0.2051 
+F-statistic: 31.27 on 6 and 698 DF,  p-value: < 2.2e-16 
+
+> # Rsq not high, 2 highly sig coeff, gestation, mom's ht, also signif dad wt predicting baby wt 
+# so it seems at first glance "important" predictors are mom and dad size and baby being (near-to) full term
+-------------------------------
+
+Older Business, Week 1 content
+
+Task 2: use adjusted variables interpretation to reproduce gestation coefficient
+in unstandardized regression
+
+> # do adjusted variables stuff (here we also reamed out the outcome variable wt,
+       get same regr coeff using wt or wt adjusted for other preds)
+> wtdotnogest = lm( wt ~  age + ht + wt1 + dht + dwt, data= subsetBabies)
+> gestdotpreds = lm( gestation ~  age + ht + wt1 + dht + dwt, data= subsetBabies)
+> gestcoeffreg = lm(residuals(wtdotnogest) ~ residuals(gestdotpreds))
+> summary(gestcoeffreg)
+
+Call:
+lm(formula = residuals(wtdotnogest) ~ residuals(gestdotpreds))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-48.6889 -10.6368   0.2207  10.1633  54.7421 
+
+Coefficients:
+                          Estimate Std. Error   t value Pr(>|t|)    
+(Intercept)             -1.941e-16  6.162e-01 -3.15e-16        1    
+residuals(gestdotpreds)  4.508e-01  3.879e-02     11.62   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+
+Residual standard error: 16.36 on 703 degrees of freedom
+Multiple R-Squared: 0.1611,     Adjusted R-squared: 0.1599 
+F-statistic:   135 on 1 and 703 DF,  p-value: < 2.2e-16 
+
+> coefficients(gestcoeffreg)[2]
+residuals(gestdotpreds) 
+              0.4507681 
+> coefficients(fullreg)[2]
+gestation 
+0.4507681 
+
+#these coeffs match, as should be. 
+  Also coeff standard errors and t-stat match up to df slightly different.
+#relevant plot at http://www-stat.stanford.edu/~rag/stat209/09lab1plot.pdf
+> plot(residuals(gestdotpreds), residuals(wtdotnogest))
+> #you can see there are a few observations you would want to look at closer
+     as a few points flatten this slope considerably
+plot(residuals(gestdotpreds), residuals(wtdotnogest), pch = 20) 
+#better plot character,small dot or Acrobat often makes it a diamond see MB plate 1
+
+
+
+======================================================
+TASK 3
+> # For weeks 2,3: Standardized coefficients, Parts b and c used in week 3 path analysis exs
+
+#########
+> a. standardize each variable to mean 0, sd 1 and run the multiple regression
+#########
+# built-in function "scale" will  do this
+#?scale gives you
+scale                  package:base                  R Documentation
+
+Scaling and Centering of Matrix-like Objects
+
+Description:
+
+     'scale' is generic function whose default method centers and/or
+     scales the columns of a numeric matrix.
+
+Usage:
+
+     scale(x, center = TRUE, scale = TRUE)
+
+Arguments:
+
+       x: a numeric matrix(like object).
+
+  center: either a logical value or a numeric vector of length equal to
+          the number of columns of 'x'.
+
+   scale: either a logical value or a numeric vector of length equal to
+          the number of columns of 'x'.
+---------------------------
+Here's a little aside demo of scale using the HW1 problem 2 data
+> coleman320dat =  read.table("http://www-stat.stanford.edu/~rag/stat209/coleman320.dat", header = T )
+
+> head(coleman320dat) #first 6 schools
+   ssal  whcol     ses tverb momed  vach
+1 3.117  46.01   6.818 27.11 6.254 39.53
+2 3.279  14.04 -14.060 26.05 5.242 28.86
+3 2.132 -27.18 -14.510 23.40 4.086 25.02
+4 2.821  57.21   8.022 23.93 6.689 34.63
+5 2.241  62.79   8.896 24.60 7.216 35.34
+6 2.873  17.71  -9.227 25.18 5.811 29.55
+> stcdat = scale(coleman320dat) #standardize all the variables to have mean 0, var 1
+> head(stcdat) # values after standardizing
+        ssal      whcol        ses      tverb       momed        vach
+1  0.9358639  0.2390086  0.4227210  1.5535123  0.07016417  0.74912638
+2  1.2804198 -0.9523682 -1.6859888  0.7655241 -1.43490082 -1.01945935
+3 -1.1591207 -2.4884505 -1.7314395 -1.2044465 -3.15412525 -1.65595130
+4  0.3063051  0.6563818  0.5443268 -0.8104524  0.71710417 -0.06306388
+5 -0.9272899  0.8643231  0.6326022 -0.3123844  1.50086825  0.05462083
+6  0.4169033 -0.8156040 -1.1978485  0.1187790 -0.58867356 -0.90508970
+
+# be compulsive and check that this was done right
+> summary(coleman320dat) # get means
+      ssal           whcol             ses              tverb      
+ Median :2.718   Median : 40.20   Median :  1.895   Median :25.08  
+ Mean   :2.677   Mean   : 39.60   Mean   :  2.633   Mean   :25.02  
+     momed            vach      
+ Median :6.176   Median :34.46  
+ Mean   :6.207   Mean   :35.01  
+
+> sqrt(var(coleman320dat)) # diagonal elements are the variable standard deviations
+           ssal     whcol        ses     tverb     momed       vach
+ssal  0.4701705  1.546910  0.9865855 0.5874447 0.2512979  0.7691175
+whcol 1.5469102 26.834499 14.7372487 1.6011349 4.0768963 11.0696736
+ses   0.9865855 14.737249  9.9008406 1.5767437 2.3161102  7.4659055
+tverb 0.5874447  1.601135  1.5767437 1.3451978 0.3575505  1.6829610
+momed 0.2512979  4.076896  2.3161102 0.3575505 0.6723962  1.7188997
+vach  0.7691175 11.069674  7.4659055 1.6829610 1.7188997  6.0330692
+
+check if you like that stvar = (var - varmean)/varsd
+I checked a couple for you
+Back to Babies data
+----------------------------------------------------------------------------------
+OR
+For those of you who enjoy writing your own functions......
+> # here's a little loop (written by Karen Kapur) that creates a new data set, standardizedVars
+> standardizedVars = subsetBabies
+> numVars = dim( standardizedVars )[2]
+> for ( i in 1:numVars ) {
++   meanVal = mean( standardizedVars[,i] )
++   sdVal = sd( standardizedVars[,i] )
++   standardizedVars[,i] = ( standardizedVars[,i] - meanVal ) / sdVal  
++ }
+#see for ref Verzani online primer http://cran.r-project.org/doc/contrib/Verzani-SimpleR.pdf
+# page 50 of pdf = page number 46 in that doc
+
+
+# else you could just standardize one-by-one
+------------------------------------------------
+Anyway you want to produce a dataset called "standardizedVars"
+> summary(standardizedVars)
+   gestation                wt                  age                   ht                  wt1            
+ Min.   :-8.213e+00   Min.   :-3.504e+00   Min.   :-2.088e+00   Min.   :-3.980e+00   Min.   :-2.017e+00  
+ 1st Qu.:-4.490e-01   1st Qu.:-6.256e-01   1st Qu.:-7.398e-01   1st Qu.:-8.203e-01   1st Qu.:-6.663e-01  
+ Median : 5.187e-02   Median : 2.603e-02   Median :-2.343e-01   Median :-3.026e-02   Median :-1.841e-01  
+ Mean   : 6.870e-16   Mean   :-2.073e-16   Mean   :-2.607e-16   Mean   : 2.672e-15   Mean   : 2.888e-16  
+ 3rd Qu.: 5.528e-01   3rd Qu.: 6.234e-01   3rd Qu.: 6.083e-01   3rd Qu.: 7.598e-01   3rd Qu.: 5.393e-01  
+ Max.   : 4.623e+00   Max.   : 3.067e+00   Max.   : 2.631e+00   Max.   : 3.130e+00   Max.   : 5.844e+00  
+      dht                  dwt            
+ Min.   :-3.585e+00   Min.   :-2.702e+00  
+ 1st Qu.:-7.900e-01   1st Qu.:-7.138e-01  
+ Median : 2.582e-01   Median :-5.090e-02  
+ Mean   :-1.671e-15   Mean   : 2.145e-16  
+ 3rd Qu.: 6.076e-01   3rd Qu.: 6.120e-01  
+ Max.   : 2.704e+00   Max.   : 3.926e+00  
+> mean(standardizedVars)
+    gestation            wt           age            ht           wt1           dht           dwt 
+ 6.869505e-16 -2.073373e-16 -2.606616e-16  2.671661e-15  2.888162e-16 -1.670829e-15  2.145288e-16 
+> sd(standardizedVars)
+gestation        wt       age        ht       wt1       dht       dwt 
+        1         1         1         1         1         1         1 
+> cov(standardizedVars)
+            gestation         wt          age         ht        wt1         dht         dwt
+gestation  1.00000000 0.39500543 -0.059611693 0.02581315 0.06386776  0.01191594 0.010700934
+wt         0.39500543 1.00000000  0.047794571 0.21614525 0.16249354  0.09822157 0.141033572
+age       -0.05961169 0.04779457  1.000000000 0.01852681 0.19244242 -0.05694164 0.003239663
+ht         0.02581315 0.21614525  0.018526813 1.00000000 0.42233662  0.33288888 0.258235062
+wt1        0.06386776 0.16249354  0.192442416 0.42233662 1.00000000  0.13149788 0.197935408
+dht        0.01191594 0.09822157 -0.056941642 0.33288888 0.13149788  1.00000000 0.542304515
+dwt        0.01070093 0.14103357  0.003239663 0.25823506 0.19793541  0.54230452 1.000000000
+> # means and sd's check, also cov matrix for standardized vars is the corr matrix for original vars
+
+
+> # regression for standardized vars
+> stdreg = lm( wt ~ gestation + age + ht + wt1 + dht + dwt - 1, data = standardizedVars ) # no intercept, since response standardized
+> summary( stdreg )
+
+Call:
+lm(formula = wt ~ gestation + age + ht + wt1 + dht + dwt - 1, 
+    data = standardizedVars)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.64396 -0.57761  0.01199  0.55190  2.97267 
+
+Coefficients:
+          Estimate Std. Error t value Pr(>|t|)    
+gestation  0.39093    0.03374  11.587  < 2e-16 ***
+age        0.05950    0.03448   1.726   0.0848 .  
+ht         0.16992    0.03902   4.354 1.53e-05 ***
+wt1        0.03780    0.03821   0.989   0.3229    
+dht       -0.01536    0.04133  -0.372   0.7103    
+dwt        0.09362    0.04047   2.313   0.0210 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+
+Residual standard error: 0.891 on 699 degrees of freedom
+Multiple R-Squared: 0.2118,     Adjusted R-squared: 0.2051 
+F-statistic: 31.31 on 6 and 699 DF,  p-value: < 2.2e-16 
+
+> # you can see same Rsq, adjRsq as before, and same significance for coeffs 
+
+> stdreg$coef
+  gestation         age          ht         wt1         dht         dwt 
+ 0.39093303  0.05949877  0.16992335  0.03779855 -0.01535762  0.09362414 
+
+#simple relation between standardized and unstandardized coefficients (ratio of sd's
+#as indicated by in-class formula for regression params)
+
+> fullreg$coef[2]  #unstandardized regression
+gestation 
+0.4507681 
+> fullreg$coef[2]*sd(gestation)/sd(wt)  #formula for standardized coeff, kill the scale
+gestation 
+ 0.390933
+
+
+> # illustrate week 3 computations, path analysis, 
+   often only correlation  matrix, not actual data are available. 
+> # Week 3 class handouts, exs, show the calculations
+
+
+Computing based on Week 2 sttandardized regression and week 3 (Tues, path analysis) content
+> ####
+> # b.  Coefficient estimates obtained from the correlations
+> ####
+
+> 
+> corPredictors = cor( cbind( gestation, age, ht, wt1, dht, dwt ) )
+> corPredictors #6x6 matrix
+            gestation          age         ht        wt1         dht         dwt
+gestation  1.00000000 -0.059611693 0.02581315 0.06386776  0.01191594 0.010700934
+age       -0.05961169  1.000000000 0.01852681 0.19244242 -0.05694164 0.003239663
+ht         0.02581315  0.018526813 1.00000000 0.42233662  0.33288888 0.258235062
+wt1        0.06386776  0.192442416 0.42233662 1.00000000  0.13149788 0.197935408
+dht        0.01191594 -0.056941642 0.33288888 0.13149788  1.00000000 0.542304515
+dwt        0.01070093  0.003239663 0.25823506 0.19793541  0.54230452 1.000000000
+
+> corPredResponse = cbind( cor( cbind(gestation, age, ht, wt1, dht, dwt), wt ) )
+> corPredResponse  # 6x1 matrix (vector)
+                [,1]
+gestation 0.39500543
+age       0.04779457
+ht        0.21614525
+wt1       0.16249354
+dht       0.09822157
+dwt       0.14103357
+
+> coefEsts = solve( corPredictors ) %*% corPredResponse # the "n" terms cancel
+> # Notice that these are equal to stdreg$coef
+> coefEsts
+                 [,1]
+gestation  0.39093303
+age        0.05949877
+ht         0.16992335
+wt1        0.03779855
+dht       -0.01535762
+dwt        0.09362414
+
+#or to match better the format of the path analysis example
+> coefEstst = t(corPredResponse) %*% solve( corPredictors ) 
+> coefEstst
+     gestation        age        ht        wt1         dht        dwt
+[1,]  0.390933 0.05949877 0.1699233 0.03779855 -0.01535762 0.09362414
+
+# match Rsq (squared multiple correlation)
+> rsq = t(corPredResponse)%*%t(coefEstst)
+> rsq  #matches st regr output
+          [,1]
+[1,] 0.2118302
+> coefEstst%*%corPredResponse  #less labored version, match dimensions
+          [,1]
+[1,] 0.2118302
+
+#to get the adjusted Rsq which penalizes for using more predictors
+
+>  numObs = length( wt ) #this is "n"
+>  numPreds = 6 #this is "p"
+1- (1-rsq)*(numObs / (numObs - numPreds) )
+          [,1]
+[1,] 0.2050648
+
+
+> ####
+> # c.  Standard errors using correlations
+> ####
+
+# I did this in pieces (derivation on p79 of Freedman text) inserting the proper
+  sample size adjustments at the end
+> 1 - rsq
+          [,1]
+[1,] 0.7881698
+>  covB = (.78817)*solve(corPredictors) # need to adjust this below for sample size
+> covB
+             gestation         age           ht         wt1          dht          dwt
+gestation  0.795731803  0.05978970  0.005351763 -0.06511381 -0.001152706  0.003422662
+age        0.059789703  0.83080745  0.044812488 -0.18858210  0.062777851 -0.011621135
+ht         0.005351763  0.04481249  1.064445939 -0.41368588 -0.272960029 -0.045169169
+wt1       -0.065113813 -0.18858210 -0.413685884  1.02038640  0.062979324 -0.127988650
+dht       -0.001152706  0.06277785 -0.272960029  0.06297932  1.194182155 -0.589779407
+dwt        0.003422662 -0.01162113 -0.045169169 -0.12798865 -0.589779407  1.145008807
+
+#standard errors for standardized coeffs are just square roots of the diagonals
+  adjusted for sample size
+
+> sqrt((covB[1,1]/(numObs ))*(numObs / (numObs - numPreds) ))
+[1] 0.03373998
+> sqrt((covB[2,2]/(numObs ))*(numObs / (numObs - numPreds) ))
+[1] 0.03447558
+> sqrt((covB[3,3]/(numObs ))*(numObs / (numObs - numPreds) ))
+[1] 0.03902323
+> sqrt((covB[4,4]/(numObs ))*(numObs / (numObs - numPreds) ))
+[1] 0.03820707
+> sqrt((covB[5,5]/(numObs ))*(numObs / (numObs - numPreds) ))
+[1] 0.04133298
+> sqrt((covB[6,6]/(numObs ))*(numObs / (numObs - numPreds) ))
+[1] 0.04047304
+
+#Compare with regression using the actual data
+
+> summary( stdreg ) # compare s.e. estimates from regressions run on the data
+
+Coefficients:
+          Estimate Std. Error t value Pr(>|t|)    
+gestation  0.39093    0.03374  11.587  < 2e-16 ***
+age        0.05950    0.03448   1.726   0.0848 .  
+ht         0.16992    0.03902   4.354 1.53e-05 ***
+wt1        0.03780    0.03821   0.989   0.3229    
+dht       -0.01536    0.04133  -0.372   0.7103    
+dwt        0.09362    0.04047   2.313   0.0210 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+
+Residual standard error: 0.891 on 699 degrees of freedom
+Multiple R-Squared: 0.2118,     Adjusted R-squared: 0.2051 
+F-statistic: 31.31 on 6 and 699 DF,  p-value: < 2.2e-16 
+
+
+--------------------------------------------------------
+TASK 4, Error in Variables (see also prob 4 HW1 for doing this kind of example without DAAG)
+
+Simple attentuation, single predictor measured with error
+
+use the errorsINx function from package DAAG shown in the week 1 lecture materials
+I set up argument to give reliability .75 with true slope = 2; results from simulation
+with 10000 observations matches the proportional bias from class handout (math facts week 1)
+
+> library(DAAG)
+> ?errorsINx
+> errorsINx(mu = 10, n=10000, a=10, b = 2, SDx = 3, SDyerr = 3, timesSDx = sqrt(1/3), gpfactor = FALSE)
+                    Intercept    Slope
+No error in x         9.92513 2.006927
+0.577350269189626sx  14.76959 1.518026
+> # reliability .75 = (1 + 1/3)^-1    matches the attentuation
+
+more general function for two fallible predictors
+> ? errorsINseveral
+try it out if you like
+
+-------------------------------------------------------
+End Lab 1   January 2013
