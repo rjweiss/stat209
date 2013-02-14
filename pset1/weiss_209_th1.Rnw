@@ -1,0 +1,432 @@
+\documentclass{article}
+\usepackage[cm]{fullpage}
+\usepackage{setspace}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{dcolumn}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\title{STAT 209: Take-Home Problem Set 1}
+\author{Rebecca Weiss}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\SweaveOpts{keep.source=TRUE}
+\DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=2em}
+\DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=2em}
+\fvset{listparameters={\setlength{\topsep}{0pt}}}
+\renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
+
+\doublespacing
+
+\maketitle
+
+
+
+\section{Question 1: Observational studies, Associations}
+
+<<label=q1, echo=false>>=
+options(width=60)
+options(continue=" ")
+options(SweaveHooks=list(fig=function()
+par(mar=c(5.1, 4.1, 1.1, 2.1))))
+@
+
+\subsection{Part A: Spurious correlation}
+<<label=q1a, echo=TRUE, results=verbatim>>=
+rm(list=ls(all=T))
+gc()
+
+#Libraries
+library(mediation)
+#reconstruct the correlation matrix
+data = as.data.frame(cbind(
+  c(1, -0.03, 0.39, -0.05, -0.08),
+  c(-0.03, 1, 0.07, -0.23, -0.16),
+  c(0.39, 0.07, 1, -0.13, -0.29),
+	c(-0.05, -0.23, -0.13, 1, 0.34),
+	c(-0.08, -0.16, -0.29, 0.34, 1)))
+rownames(data) = c('Exercise','Hardiness','Fitness','Stress','Illness')
+colnames(data) = c('Exercise','Hardiness','Fitness','Stress','Illness')
+
+#We need to see if the bivariate correlation of -0.27 changes compared to the partial correlation
+#let's look at the correlation between Fitness and Illness controlling for stress
+ryx = -0.29
+ryz = -0.13
+rxz = 0.34
+
+ryx.z = (ryx - (ryz*rxz)) / ( sqrt(1-(ryz^2)) * sqrt(1-(rxz^2)) )
+ryx.z
+#this produces a partial correlation that is close to the zero order correlation between 
+#Fitness and Illness.  This implies that there is a direct effect, controlling for stress.
+#Here's an attempt at a significance test.  First, compute the partial correlation matrix:
+cor_mat = as.matrix(data)
+pcor_mat = solve(cor_mat) * -1
+diag(pcor_mat) = -diag(pcor_mat)
+pcor_mat = cov2cor(pcor_mat)
+cor.test(cor_mat, pcor_mat)
+#This shows that the correlation and partial correlation are not significantly different 
+#from each other at the 95% CI (because the correlation between these two matrices is nonzero)
+@
+
+\subsection{Part B: Stress as mediator}
+
+<<label=q1b,echo=TRUE, results=verbatim>>=
+#STANDARDIZED METRICS
+#first, get the coef predictors for stress and fitness
+illness = c(-.08,-.16,-.29,.34)
+illness_pred_mat = data[1:4, 1:4]
+illness_coefs = solve(illness_pred_mat, illness)
+stress = c(-.05, -.23, -.13)
+stress_pred_mat = data[1:3, 1:3]
+stress_coefs = solve(stress_pred_mat, stress)
+
+#perform mediation analysis via sobel test
+names(illness_coefs) = names(data)[1:4] 
+names(stress_coefs) = names(data)[1:3]
+
+#get standard errors from correlation matrix
+illness_rsq = illness_coefs %*% illness
+stress_rsq = stress_coefs %*% stress
+
+#for illness
+n = 373
+illness_cov_beta = (1-illness_rsq)[1] * solve(illness_pred_mat)
+illness_serr = NA
+for (i in 1:length(diag(illness_cov_beta))){
+	illness_serr[i] = sqrt(as.numeric(diag(illness_cov_beta)[i])/n) * (n / (n-length(illness))) 
+}
+names(illness_serr) = names(illness_coefs)
+
+#for stress
+stress_cov_beta = (1-stress_rsq)[1] * solve(stress_pred_mat)
+stress_serr = NA
+for (i in 1:length(diag(stress_cov_beta))){
+	stress_serr[i] = sqrt(as.numeric(diag(stress_cov_beta)[i])/n) * (n / (n-length(illness)))
+}
+names(stress_serr) = names(stress_coefs)
+
+#here's some sloppy coding:
+illness_coefs = as.data.frame(t(illness_coefs))
+stress_coefs = as.data.frame(t(stress_coefs))
+illness_serr = as.data.frame(t(illness_serr))
+stress_serr = as.data.frame(t(stress_serr))
+
+#first step: indirect effect of stress on illness (mediating fitness and illness)
+indirect_effect = stress_coefs$Fitness * illness_coefs$Stress
+indirect_effect
+
+#get the effect variance and standard error
+effect_var = ((stress_coefs$Fitness)^2 * (illness_serr$Stress)^2) + 
+  ( (illness_coefs$Stress)^2 * (stress_serr$Fitness)^2 )
+effect_serr = sqrt(effect_var)
+
+#finding the z value
+z = indirect_effect/effect_serr
+
+#do we just compare the z against the t distribution for significance?  are degrees of freedom n-1?
+print(pt(z, n-1))
+
+#UNSTANDARDIZED COEFFICIENTS
+#Unstandarized coefficient for y on x is the covariance of x and y over the variance of 
+#x.  Since we have all the standard deviations, we simply divide the coefficients by 
+#the variance of their corresponding X to get unstandardized coefficients.
+stdevs = c(66.50, 3.80, 18.40, 6.70, 624.80)
+vars = as.data.frame(t(stdevs^2))
+names(vars) = c('Exercise','Hardiness','Fitness','Stress','Illness')
+
+#now redo all of the previous steps, but with unstandardized coefficients
+
+#first step: indirect effect of stress on illness (mediating fitness and illness)
+indirect_effect = (stress_coefs$Fitness / vars$Fitness) * (illness_coefs$Stress / vars$Stress)
+indirect_effect
+
+#get the effect variance and standard error
+effect_var = (((stress_coefs$Fitness)^2 / vars$Fitness) * ((illness_serr$Stress)^2 / vars$Stress) +
+                ((illness_coefs$Stress)^2 / vars$Stress) * ((stress_serr$Fitness)^2 / vars$Fitness))
+              effect_serr = sqrt(effect_var)
+              effect_serr
+              
+              #finding the z value
+              z = indirect_effect/effect_serr
+              z
+              pt(z, n-1)
+@
+This is why we use standardized coefficients.  The z-score is nonsense.  This is because the original units that the variables were measured in are not compatible to each other.  This results in an insignificant finding.  
+
+\subsection{Part C: Effects of errors in measurement}
+Recall that reliability of a measure is the ratio of slopes.  Therefore, we can find the calculations by multiplying the slope coefficient by the reliability. If fitness has reliability 0.8 and stress has reliability 0.7, we can compute the following:
+<<echo=TRUE>>=
+indirect_effect = (stress_coefs$Fitness*0.8) * (illness_coefs$Stress*0.7)
+indirect_effect
+
+#get the effect variance and standard error
+effect_var = ((stress_coefs$Fitness * 0.8)^2 * (illness_serr$Stress)^2) + 
+  ( (illness_coefs$Stress*0.7)^2 * (stress_serr$Fitness)^2 )
+effect_serr = sqrt(effect_var)
+effect_serr
+              
+              #finding the z value
+              z = indirect_effect/effect_serr
+              z
+              pt(z, n-1)
+@
+
+And thus, the relationship is no longer significant.
+
+\section{Question 2: Potential outcomes, Encouragement designs}
+
+\subsection{Sodium intake on Systolic Blood Pressure}
+For this question, we are evaluating an experiment that looked at whether sodium intake has some effect on cardiovascular health.  Since I don't know much at all about cardiology, I will assume that there was a theoretical reason to presume that a) systolic blood pressure is a useful indicator of cardiovascular health, particularly with respect to hypertension and b) there was a sound theoretical reason to hypothesize that sodium related to cardiovascular health (perhaps naive of me to assume that there are sound reasons behind hypotheses in medical research).
+
+We are given tables 3 and 5.  The design of this study was as follows: participants were randomly assigned to either a treatment or control condition.  In treatment, participants were encouraged to reduce their sodium intake through an intervention program consisting  of counseling, dietary changes, group meetings, and so forth.  In control, participants were \emph{not encouraged} to make changes to their diet or lifestyle.  Systolic blood pressure and urinary sodium content were the measures of interest.
+
+This is an encouragement design because of the very nature of treatment.  Much like Holland's example with students being encouraged to study more, and then evaluating the effect of amount of time studied on some outcome score, this experiment has two paths: the effect of assignment on the independent variable and the effect of the independent variable on the outcome variable.  Participants in treatment are encouraged to reduce their sodium intake, a treatment to which we assume must have varying degrees of success amongst assigned participants.  We note the average changes between the treatment and control conditions on sodium intake as well as systolic blood pressure, note significant differences via our favorite statistical inference test, and declare sodium intake to have a strong negative effect on cardiovascular health.
+
+\subsubsection{Dose-response between systolic BP and sodium intake}
+
+To estimate the unit-level effects, it is useful to revisit Holland's formulations.
+
+First, with respect to treatment, we have assignment $S$ (or in Rogosa's slides, $G$), which results in the following variable $R(u, s)$:
+
+\begin{quote}
+$R(u, t)$ = amount $u$ decreases sodium intake if encouraged\\
+$R(u, c)$ = amount $u$ decreases sodium intake if not encouraged
+\end{quote}
+
+Thus, outcome is not simply a function of $S$, but also of $R$, or more formally Y(u, s, r):
+
+\begin{quote}
+$Y(u, t, r)$ = systolic blood pressure for $u$ if $u$ is encouraged to decrease sodium intake and $u$ decreases sodium intake by $r$ amount\\
+$Y(u, c, r)$ = systolic blood pressure for $u$ if $u$ is not encouraged to decrease sodium intake and $u$ decreases sodium intake by $r$ amount
+\end{quote}
+
+One important point to realize about encouragement designs is that not all combinations of R(u,s) and Y(u, s, r) are observable.  This results in a problem: we have no counterfactual data.  This is why a simple inferential test of sample means is problematic.  We must instead evaluate average causal effects over these variables, using notation from equations 24-27 from Holland: $\rho(u)$, $(r-r')\beta(u)$, $\tau(u)$, and the direct + indirect effect $\tau(u) + \rho(u)\beta(u)$.
+
+
+\begin{figure}[!htf]
+\includegraphics[width=\textwidth]{table3}
+\end{figure}
+
+\begin{figure}[!htf]
+\includegraphics[width=\textwidth]{table5}
+\end{figure}
+
+\paragraph{Difference in amount of sodium intake for $u$ when in treatment vs. when in control (from table 3, from baseline between conditions)}
+\begin{align*}
+R_t(u) - R_c(u) &= \rho(u)\\
+154.6 - 156.4 &= \Sexpr{154.6 - 156.4}
+\end{align*}
+
+\paragraph{Difference in systolic blood pressure for reducing sodium intake by amount $r$ vs. reducing sodium intake by amount $r'$ (from table 5, 18 month change from baseline between conditions)}
+
+\begin{align*}
+Y_{Sr}(u) - Y_{Sr'}(u) = (r-r')\beta(u)\\
+-5.08 + 3.02 = \Sexpr{-5.08 + 3.02}
+\end{align*}
+
+\paragraph{Difference in systolic blood pressure when in treatment vs. when in control with same amount of sodium intake $r$ (from table 5, baseline)}
+
+\begin{align*}
+Y_{tr}(u) - Y_{cr}(u) &= \tau(u) \\
+124.8 - 125.1 &= \Sexpr{signif(124.8-125.1, digits=3)}
+\end{align*}
+
+\paragraph{Overall difference in systolic blood pressure score when in treatment vs. when in control}
+\begin{align*}
+Y_{tR_{t}}(u) - Y_{cR_{c}}(u) &= \tau(u) + \rho(u)\beta(u)\\
+&= \Sexpr{(124.8-125.1) + ((154.6-156.4)*(-5.08+3.02))} 
+\end{align*}
+
+\paragraph{Summary: } For every \Sexpr{(124.8-125.1) + (124.8-125.1) + ((154.6-156.4)*(-5.08+3.02))} decrease in salt intake, I estimate a unit decrease in systolic blood pressure.
+
+\paragraph{What's the assumption underlying these estimators?}
+We are assuming that \emph{individual differences} are not relevant between conditions.  In other words, we are assuming that there are no unobserved and influential covariates of participants that differ systematically between treatment versus control conditions, particularly those that interact with the treatment.  This presents a potential problem of bias.  For example, let's say the encouragement treatment is more effective at introducing novel lifestyle changes amongst young women more so than any other group.  Perhaps these unobserved lifestyle changes are also effective at lowering systolic blood pressure.  If these lifestyle changes are not observed and accounted for in this model, the effect of sodium intake on systolic blood pressure may be overestimated.  For the purposes of this study, it seems rather unlikely that certain subsamples of the sample would react that dramatically different to the intervention treatment, given its ultimate goal of reducing sodium intake.  
+
+Additionally, we assume that the encouragement was the only factor leading to a difference in behavior between treatment and control.  This is because the implicit assumption is that control is acting as treatment would, had it not been for the treatment.  Because this is an \emph{encouragement}, it is difficult to be sure that 1) the treatment uniformally affect all those in the response-treatment condition and 2) those in the control didn't also spontaneously decide to make lifestyle changes.  Again, this is unusual and unlikely, given the nature of the behavior the authors were trying to change.
+
+Holland alerts us to the importance of ALICE (additive, linear, causal effects).  This is a more formal explanation of this assumption: that the effects of the treatment are constant and don't depend on some intrinsic property of the unit (in this case, participants)
+
+\subsection{Framing effects on Likelihood of Congressional Outreach}
+In this study, Brader et al. (2008) presumed that exposure to certain kinds of media regarding immigration policy would induce a emotional response amongst exposed individuals, which would increase the probability that they would want to write their Congressman.  In this case, we have a treatment $S$ of \{Latino cue : European cue\}.  Our response variable is ``emo'', which is a 10pt measure of anxiety.  Our outcome variable is a binary treatment \{0 : 1\}, indicating whether a participant agreed to send a message to their Congressman or not.  
+
+This resembles an encouragement design, albeit more subtly than the previous example.  Here, the encouragement is the frame; a Latino frame is ostensibly supposed to incur a different level of anxiety amongst participants as opposed to a European frame.  This effect, in line with much social science, is presumed to be an implicit effect, as it is a psychological construct.  Therefore, the measured variable ``emo'' is supposed to serve as an indicator as to whether the treatment elicited the appropriate response.  Additionally, the measured variable ``emo'' is presumed to be a mediator on ``cong\_mesg'', such that the probability that a person will submit a message to their Congressman is increased if anxiety is increased.
+
+First, let's load the data and fit the models, \emph{lm} models ``model0'', ``model1'', and ``model2''.
+<<label=q2b, echo=true>>=
+options(width=60)
+options(continue=" ")
+library(mediation)
+data(framing)
+attach(framing)
+model0 = lm(emo ~ treat)
+model1 = lm(cong_mesg ~ emo)
+model2 = lm(treat ~ cong_mesg)
+detach(framing)
+@
+
+\begin{table}[htb]
+\begin{minipage}[b]{.5\linewidth}
+\centering
+<<label=q2b1, echo=false,results=tex>>=
+library(apsrtable)
+apsrtable(model0, model1, model2,
+          align="center", 
+          stars="default", model.counter=0, order="rl", Sweave=T)
+@
+\captionof{table}{Males and Females}
+\end{minipage}%
+\begin{minipage}[b]{.5\linewidth}
+\centering
+<<label=q2b1, echo=false,results=tex>>=
+framingXX = framing[framing$gender %in% 'female',]
+attach(framingXX)
+model0 = lm(emo ~ treat)
+model1 = lm(cong_mesg ~ emo)
+model2 = lm(treat ~ cong_mesg)
+detach(framingXX)
+apsrtable(model0, model1, model2,
+          align="center", 
+          stars="default", model.counter=0, order="rl", Sweave=T)
+@
+\captionof{table}{Females only}
+\end{minipage}
+\end{table}
+
+\paragraph{What are the significant effects?}
+
+\subparagraph{Treatment on ``emo'': }  According to the OLS model, the treatment does have a positive and significant effect on anxiety.  Being in the treatment condition increases anxiety by 1.48 units.  For females, this effect is smaller and less significant, 1.16 units.
+\subparagraph{Treatment on ``cong\_mesg'': } According to the OLS model, anxiety does have a positive and significant effect on the probability that someone will send a message to their Congressman.  For every unit increase in anxiety, the probability of sending a message increases by 6\%.  For females, this effect is the same.
+\subparagraph{Effect of unit changes in ``emo'' on probability of sending message to Congressmen: } Upon reviewing model 2, we see that the slope is $0.09$ and the intercept is $0.23$.   The slope is the change in outcome as treatment moves from 0 to 1.  The intercept is the baseline probability.  Interpreting these results according to those terms means that the baseline probability that someone will send a message to their Congressman, regardless of treatment or anxiety, is 23\%.  For females, the baseline is higher, 29\%.  
+
+\paragraph{Can we make the same assumptions with this encouragement design as with the sodium intake example in 2a?}
+No.  There are several indicators that individual differences interact with the response to the treatment.  First, there are baseline differences between males and females regarding their probability of sending a message to a Congressman regardless of their treatment.  Second, the effect of the treatment on anxiety is different.  Women do not react as strongly to the treatment with respect to elevated levels of anxiety, and yet the effect of anxiety on probability of sending a message to a Congressman is the same between males and females.
+
+Consider, also, that there it's not clear that those in the control condition should be considered identical to those in the treatment condition, aside from the framing encouragement.  Perhaps there were additional unobserved events that occurred 
+
+ALICE
+
+\section{Question 3: Multilevel Data, Random effects models}
+
+<<echo=FALSE, results=hide>>=
+library(mlmRev)
+data(Exam)
+attach(Exam)
+@
+
+\subsection{Compute the traditional quantities for ``normexam'' predicted by prior test score ``standLRT''}
+
+There are two models that we can use to try to explore the relationship that this metric ``standLRT'' has with ``normexam.''  One is a simple OLS, regressing the school average score ``schavg'' on the outcome variable ``normexam.''  This model essentialy assumes that there are no significant differences between students at various schools.  A better model would be to try and account for the fixed effect of student variance within schools.
+
+\paragraph{Part A: Aggregation bias} 
+First, let's evaluate this relationship at the school level, using school-level means. 
+
+<<label=3, echo=TRUE>>=
+#is the distribution of the schavg is the same as the actual within school mean standLRT 
+options(width=60)
+summary(unique(schavg))
+summary(tapply(standLRT, school, mean))
+
+#Also, school 48 seems to be really throwing off the boxplot, so I'm going to get rid of it for now
+meannormexam = tapply(Exam$normexam, Exam$school, mean)
+Exam$meannormexam = meannormexam[Exam$school]
+Exam = Exam[!Exam$school %in% 48,]
+Exam_school = Exam[!duplicated(Exam[,'school']),]
+model_agg = lm(meannormexam ~ schavg, data=Exam_school)
+@
+
+<<label=3a, echo=TRUE>>=
+options(width=60)
+summary(model_agg)
+@
+
+According to the aggregated model, for every unit increase in ``schavg,'' normexam will increase by \Sexpr{signif(coef(model_agg)[2], digits=3)}.  The intercept is \Sexpr{signif(coef(model_agg)[1], digits=3)}. Thus, we might be tempted to say that the way to improve the normalized exam score is simply to accept the students with the highest entering scores. This is hardly compelling policy and begs the question: are all students within schools essentially identical?  
+
+\paragraph{Part B: Contextual effects }  What is the (supposed) estimate of the effect on ``normexam'' for a student being in a school with one unit higher mean score on ``standLRT'' and student ``held constant?''.  This is akin to asking, what is the average slope and intercept over all individual regressions ``normexam'' on ``cstandLRT'' fit for each school.  As opposed to the aggregated model, the estimates for the slope and intercept are slightly different.  
+
+<<echo=TRUE>>=
+#Centering within-school individual scores using school means
+library(lme4)
+Exam$cstandLRT = Exam$standLRT - Exam$schavg
+model_lmlist = lmList(normexam ~ cstandLRT|school, Exam)
+#fixed effects are the same as taking the mean Intercept and Slopes for the centered standLRT metric
+sapply(coef(model_lmlist), mean)
+@
+
+According to this model, the true effect on normexam is \Sexpr{signif(sapply(coef(model_lmlist), mean)[2], digits=3)}, with the intercept at \Sexpr{signif(sapply(coef(model_lmlist), mean)[1], digits=3)}.  This is a rather large difference in slope than the aggregated model, which indicates an \emph{aggregation bias} of  \Sexpr{signif(coef(model_agg)[2]-sapply(coef(model_lmlist), mean)[2], digits=3)}.
+
+\subsection{Gender differences in outcome (the ``gender gap'') for the coed (``mixed'') schools}
+
+\paragraph{\textbf{Part C: } Give a point estimate and standard error for gender differences in outcome for these multilevel data}
+
+First, let's formally define the models that we are looking at.  We're interested 
+
+At another level, we recognize that each individual school might operate slightly differently, and that using a mean measure of a school actually results in a loss of information about the statistical relationships between the variables of interest.  Level 1 is the within-schools regression, looking at each individual $j$ in school $i$.  Level 2 is over all schools, acknowledging the effect of average standLRT performance and gender.
+
+\subparagraph{Level 1: } $normexam$ = $\alpha_{0i}$ + $\alpha_{1i}cstandLRT_{ij}$ + $\epsilon_{ij}$
+\subparagraph{Level 2: $\alpha_{0i}$}=  $\gamma_{00}$ + $\gamma_{01}schavg$ + $\gamma_{02}sex_{i}$ + $u_{0i}$
+\subparagraph{Level 2: $\alpha_{1i}$}=  $\gamma_{10}$ + $\gamma_{11}schavg$ + $\gamma_{12}sex_{i}$ + $u_{1i}$
+
+<<label=3c, echo=TRUE>>=
+options(width=60)
+options(continue=" ")
+#First, subset down to only mixed-gender schools
+Exam_mxd = Exam[Exam$type == 'Mxd',]
+Exam_mxd$sex = factor(Exam_mxd$sex, levels=c('M','F'))
+#FYI, schools 43 and 47 barely count as coed, should drop them
+#table(sex, school)
+Exam_mxd = Exam_mxd[!Exam_mxd$school %in% c(43, 47),]
+
+#using lmList
+model_lvl1_XX = lmList(normexam ~ cstandLRT|school, subset = sex == 'F', data=Exam_mxd)
+model_lvl1_XY = lmList(normexam ~ cstandLRT|school, subset = sex == 'M', data=Exam_mxd)
+
+#using lmer
+library(lme4)
+model_lvl2_lmer = lme4::lmer(normexam ~ schavg*cstandLRT + sex*cstandLRT + 
+                               (1 + cstandLRT|school), data = Exam_mxd)
+@
+
+<<label=3cd_plot, fig=TRUE, echo=FALSE>>=
+options(width=60)
+options(continue=" ")
+library(reshape)
+library(ggplot2)
+library(car)
+coefs_lvl1_XX = coef(model_lvl1_XX)
+coefs_lvl1_XY = coef(model_lvl1_XY)
+
+coefs = melt(list(coefs_lvl1_XX,                 
+                  coefs_lvl1_XY))
+coefs$L1 = as.factor(recode(coefs$L1, "1='Female';2='Male'"))
+
+
+p = ggplot(coefs, aes(x=as.factor(L1), y=value)) + geom_boxplot() + facet_grid(. ~ variable) + labs(title="Gender differences", x='Intercept and slopes', y='')
+p
+
+@
+
+As you can see from the graph, there is a gender effect on the intercept.  The boxplot indicates that females have somewhat stronger performance within the schools on average, and the slopes on cstandLRT are relatively the same.  
+
+This is supported by the output below:
+
+<<echo=FALSE, results=verbatim>>=
+options(width=80)
+summary(model_lvl2_lmer)
+@
+
+
+\paragraph{\textbf{Part D:} Do these gender differences have any association with ``intake''}
+
+\begin{itemize}
+  \item This model is pegged against males as the baseline.  The fixed-effect of \Sexpr{signif(fixef(model_lvl2_lmer)[1], digits=3)} is the average level of performance on normexam of males.  
+  \item The coefficient for sexF is \Sexpr{signif(fixef(model_lvl2_lmer)[4], digits=3)} and it represents the average performance of females on the normexam relative to males.  In other words, females are performing better than males, on average, within schools.
+  \item The coefficient for schavg is \Sexpr{signif(fixef(model_lvl2_lmer)[2], digits=3)}, which is a school's average normexam performance to their average standLRT scores.  in other words, for each unit increase in schavg, normexam will increase by \Sexpr{signif(fixef(model_lvl2_lmer)[2], digits=3)} on average.
+  \item The coefficient for cstandLRT is the average slope for standLRT for all males in these schools.  Contrast that with the coefficient for cstandLRT:sexF, which is the average slope for all females.  The slope is smaller, on average, for females.
+  \item The coefficient for schavg:cstandLRT is \Sexpr{signif(fixef(model_lvl2_lmer)[5], digits=3)}, which represents the average change in the within-school cstandLRT slope given a one-increment increase in the school average.  In other words, if a school's average (schavg) were to increase by one unit, the slope for that school's cstandLRT would increase by \Sexpr{signif(fixef(model_lvl2_lmer)[2], digits=3)}.
+\end{itemize}
+
+
+\end{document}

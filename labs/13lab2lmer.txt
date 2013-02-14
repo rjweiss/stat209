@@ -1,0 +1,201 @@
+
+      Lab 2, alternative version using package lme4, lmer function    1/31/13
+
+Refer to the main Lab2 postings for background and data manipulation commentary
+The purpose of this posting is to give the small alterations for using
+the updated lme4 (versus the standard nlme) package.
+The only difference apparent to the user is the slightly "improved" syntax for lmer
+in stating the random (level 1) part of the combined model.
+If I had thought to write out the Bryk data frame last time I did
+a run-through of Lab2 I could have simply started this by reading in that data set
+That is, at the end of lab2 (nlme historical version), a command such as
+  > write.table(Bryk, file = "D:\\drr11\\stat209\\labs\\brykdata", quote = FALSE)
+would have created the 6 cols that we worked hard to build up in Lab2
+
+Below we need to install 2 packages: lme4 and MEMSS, the later from Bates-Pinhero
+book contains the HSB datasets (as a substitute for using these data from the nlme
+package). You do not want to have nlme and lme4 loaded
+in the same R-session. If you want to juggle these, before bringing in lme4 for ex 
+clear out nlme by (this works for me)
+>detach("package:nlme")
+
+Notice especially that almost everything is the same in lme4 and it was in nlme
+package; only the syntax in the lmer function differs (prob better).
+I do all the steps here just to show you the similarities.
+------------------------------------------------------------------
+
+
+
+R version 2.11.1 (2010-05-31)
+
+> library(lme4)
+Loading required package: Matrix
+Loading required package: lattice
+Attaching package: 'Matrix'
+The following object(s) are masked from 'package:base':
+    det
+Attaching package: 'lme4'
+The following object(s) are masked from 'package:stats':
+    AIC
+
+> library(MEMSS)
+Attaching package: 'MEMSS'
+The following object(s) are masked from 'package:datasets':
+    CO2, Orange, Theoph
+
+  Redo all the data manips from Lab2 (see those for commentary)
+> data(MathAchieve)
+> MathAchieve[1:10,]
+   School Minority    Sex    SES MathAch MEANSES
+1    1224       No Female -1.528   5.876  -0.428
+2    1224       No Female -0.588  19.708  -0.428
+3    1224       No   Male -0.528  20.349  -0.428
+4    1224       No   Male -0.668   8.781  -0.428
+5    1224       No   Male -0.158  17.898  -0.428
+6    1224       No   Male  0.022   4.583  -0.428
+7    1224       No Female -0.618  -2.832  -0.428
+8    1224       No   Male -0.998   0.523  -0.428
+9    1224       No Female -0.888   1.527  -0.428
+10   1224       No   Male -0.458  21.521  -0.428
+> dim(MathAchieve)
+[1] 7185    6
+> data(MathAchSchool)
+> MathAchSchool[1:10,]
+     School Size   Sector PRACAD DISCLIM HIMINTY MEANSES
+1224   1224  842   Public   0.35   1.597       0  -0.428
+1288   1288 1855   Public   0.27   0.174       0   0.128
+1296   1296 1719   Public   0.32  -0.137       1  -0.420
+1308   1308  716 Catholic   0.96  -0.622       0   0.534
+1317   1317  455 Catholic   0.95  -1.694       1   0.351
+1358   1358 1430   Public   0.25   1.535       0  -0.014
+1374   1374 2400   Public   0.50   2.016       0  -0.007
+1433   1433  899 Catholic   0.96  -0.321       0   0.718
+1436   1436  185 Catholic   1.00  -1.141       0   0.569
+1461   1461 1672   Public   0.78   2.096       0   0.683
+> dim(MathAchSchool)
+[1] 160   7
+>  attach(MathAchieve)
+>  mses = tapply(SES, School, mean) # mean of SES for each school
+>  detach(MathAchieve)
+> dim(mses)
+[1] 160
+> mses[1:10]
+       1224        1288        1296        1308        1317        1358        1374        1433        1436        1461 
+-0.43438298  0.12160000 -0.42550000  0.52800000  0.34533333 -0.01966667 -0.01264286  0.71200000  0.56290909  0.67745455 
+> Bryk = as.data.frame(MathAchieve[, c("School", "SES", "MathAch" )])
+>  names(Bryk) = c("school", "ses", "mathach")
+>  Bryk[1:10,]
+   school    ses mathach
+1    1224 -1.528   5.876
+2    1224 -0.588  19.708
+3    1224 -0.528  20.349
+4    1224 -0.668   8.781
+5    1224 -0.158  17.898
+6    1224  0.022   4.583
+7    1224 -0.618  -2.832
+8    1224 -0.998   0.523
+9    1224 -0.888   1.527
+10   1224 -0.458  21.521
+> Bryk$meanses = mses[as.character(Bryk$school)] #cute trick for linking school and meanses
+> 
+>  Bryk[1:10,]
+   school    ses mathach   meanses
+1    1224 -1.528   5.876 -0.434383
+2    1224 -0.588  19.708 -0.434383
+3    1224 -0.528  20.349 -0.434383
+4    1224 -0.668   8.781 -0.434383
+5    1224 -0.158  17.898 -0.434383
+6    1224  0.022   4.583 -0.434383
+7    1224 -0.618  -2.832 -0.434383
+8    1224 -0.998   0.523 -0.434383
+9    1224 -0.888   1.527 -0.434383
+10   1224 -0.458  21.521 -0.434383
+>  Bryk$cses = Bryk$ses - Bryk$meanses 
+> # the centered individual ses, relative standing on the ses measure for a student within school
+> # we need this so that intercept in Level I model is mean achievement for school
+> 
+>  Bryk[1:10,]
+   school    ses mathach   meanses        cses
+1    1224 -1.528   5.876 -0.434383 -1.09361702
+2    1224 -0.588  19.708 -0.434383 -0.15361702
+3    1224 -0.528  20.349 -0.434383 -0.09361702
+4    1224 -0.668   8.781 -0.434383 -0.23361702
+5    1224 -0.158  17.898 -0.434383  0.27638298
+6    1224  0.022   4.583 -0.434383  0.45638298
+7    1224 -0.618  -2.832 -0.434383 -0.18361702
+8    1224 -0.998   0.523 -0.434383 -0.56361702
+9    1224 -0.888   1.527 -0.434383 -0.45361702
+10   1224 -0.458  21.521 -0.434383 -0.02361702
+>  sector = MathAchSchool$Sector
+>  names(sector) = row.names(MathAchSchool)
+>  Bryk$sector = sector[as.character(Bryk$school)]
+>  Bryk[1:10,]
+   school    ses mathach   meanses        cses sector
+1    1224 -1.528   5.876 -0.434383 -1.09361702 Public
+2    1224 -0.588  19.708 -0.434383 -0.15361702 Public
+3    1224 -0.528  20.349 -0.434383 -0.09361702 Public
+4    1224 -0.668   8.781 -0.434383 -0.23361702 Public
+5    1224 -0.158  17.898 -0.434383  0.27638298 Public
+6    1224  0.022   4.583 -0.434383  0.45638298 Public
+7    1224 -0.618  -2.832 -0.434383 -0.18361702 Public
+8    1224 -0.998   0.523 -0.434383 -0.56361702 Public
+9    1224 -0.888   1.527 -0.434383 -0.45361702 Public
+10   1224 -0.458  21.521 -0.434383 -0.02361702 Public
+
+> dim(Bryk)
+[1] 7185    6
+> remove(sector) #clean up variable (use it within Bryk dataset)
+>  attach(Bryk) #we can refer to variables by simple name
+>  table(sector) #get the student breakdown 
+sector
+  Public Catholic 
+    3642     3543 
+>  cathRegC = lmList(mathach ~ cses| school, subset = sector == "Catholic", data = Bryk)
+>  pubRegC = lmList(mathach ~ cses| school, subset = sector == "Public", data = Bryk)
+> length(cathRegC); length(pubRegC)
+[1] 70
+[1] 90
+> pubcoef= coef(pubRegC)
+> cathcoef= coef(cathRegC)
+>  par( mfrow = c(1,2)) # opens a graphics window, creates the figure shown in lecture
+>  boxplot(cathcoef[,1], pubcoef[,1], main = 'Intercepts', names = c('Catholic', 'Public'))
+>  boxplot(cathcoef[,2], pubcoef[,2], main = 'Slopes', names = c('Catholic', 'Public'))
+> 
+> # order the sector factor
+>  Bryk$sector = factor(Bryk$sector, levels = c('Public', 'Catholic'))
+
+
+####here is the main event, fitting the random effects model using lmer, 
+           note change in syntax, same output values
+
+> bryklmer = lmer(mathach ~ meanses*cses + sector*cses + (1 +  cses|school), data = Bryk)
+> summary(bryklmer)
+Linear mixed model fit by REML 
+Formula: mathach ~ meanses * cses + sector * cses + (1 + cses | school) 
+   Data: Bryk 
+   AIC   BIC logLik deviance REMLdev
+ 46524 46592 -23252    46496   46504
+Random effects:
+ Groups   Name        Variance Std.Dev. Corr  
+ school   (Intercept)  2.37958 1.54259        
+          cses         0.10122 0.31814  0.391 
+ Residual             36.72116 6.05980        
+Number of obs: 7185, groups: school, 160
+
+Fixed effects:
+                    Estimate Std. Error t value
+(Intercept)          12.1279     0.1993   60.86
+meanses               5.3329     0.3692   14.45
+cses                  2.9450     0.1556   18.93
+sectorCatholic        1.2266     0.3063    4.00
+meanses:cses          1.0392     0.2989    3.48
+cses:sectorCatholic  -1.6427     0.2398   -6.85
+
+Correlation of Fixed Effects:
+            (Intr) meanss cses   sctrCt mnss:c
+meanses      0.256                            
+cses         0.075  0.019                     
+sectorCthlc -0.699 -0.356 -0.052              
+meanses:css  0.019  0.074  0.293 -0.026       
+css:sctrCth -0.052 -0.027 -0.696  0.077 -0.351
+> 

@@ -1,0 +1,599 @@
+#####################################
+#Lab 3 Instrumental variables Stat 209  2/13/13
+   Rogosa R-Session
+#####################################
+
+In this my session output I did not duplicate all the explanation
+in the lab text, but did all the basic analyses and added some notes.
+So these two versions should be looked at side by side
+First run through I use the traditional tsls function from the sem package.
+Then at the end I repeat with the (Stata-phonic) ivreg command from the 
+newer AER package.
+
+
+
+> # Lab 3
+> mroz87 =  read.table( "http://www-stat.stanford.edu/~rag/stat209/Mroz87.dat", header = T)
+> names(mroz87)
+ [1] "lfp"      "hours"    "kids5"    "kids618"  "age"      "educ"    
+ [7] "wage"     "repwage"  "hushrs"   "husage"   "huseduc"  "huswage" 
+[13] "faminc"   "mtr"      "motheduc" "fatheduc" "unem"     "city"    
+[19] "exper"    "nwifeinc" "wifecoll" "huscoll" 
+> # Variable definition in lab script also linked, main page
+
+# lfp Dummy variable for labor-force participation.
+# hours Wife's hours of work in 1975.
+# kids5 Number of children 5 years old or younger.
+# kids618 Number of children 6 to 18 years old.
+# age Wife's age.
+# educ Wife's educational attainment, in years.
+# wage Wife's average hourly earnings, in 1975 dollars.
+# repwage Wife's wage reported at the time of the 1976 interview.
+# hushrs Husband's hours worked in 1975.
+# husage Husband's age.
+# huseduc Husband's educational attainment, in years.
+# huswage Husband's wage, in 1975 dollars.
+# faminc Family income, in 1975 dollars.
+# mtr Marginal tax rate facing the wife.
+# motheduc Wife's mother's educational attainment, in years.
+# fatheduc Wife's father's educational attainment, in years.
+# unem Unemployment rate in county of residence, in percentage points.
+# city Dummy variable = 1 if live in large city, else 0.
+# exper Actual years of wife's previous labor market experience.
+# nwifeinc Non-wife income.
+# wifecoll Dummy variable for wife's college attendance.
+# huscoll Dummy variable for husband's college attendance.
+
+> library(sem)
+> # I already had sem installed; if not need to install.packages("sem") or "AER" to do this with ivreg; see Appendix
+> help(tsls)
+> # tsls is traditional tool for IV; ivreg from AER the newer alternative (see appendix at end of lab)
+> # outcome variable is log-wage for the 428 working women
+
+> attach(mroz87)
+> table(lfp)
+lfp
+  0   1 
+325 428 
+> table(wage > 0)
+
+FALSE  TRUE 
+  325   428 
+> detach(mroz87)
+
+
+
+> poswage = subset(mroz87, wage > 0)  # my new data subset
+> poswage$logWage =  log( poswage$wage ) # adding logWage to the data set for session
+> attach(poswage)
+> names(poswage)
+ [1] "lfp"      "hours"    "kids5"    "kids618"  "age"      "educ"    
+ [7] "wage"     "repwage"  "hushrs"   "husage"   "huseduc"  "huswage" 
+[13] "faminc"   "mtr"      "motheduc" "fatheduc" "unem"     "city"    
+[19] "exper"    "nwifeinc" "wifecoll" "huscoll"  "logWage" 
+
+> length(logWage)
+[1] 428
+> table(lfp) #all the women in this subset are in the workforce
+lfp
+  1 
+428 
+> # so the poswage data subset is the 428 working women, and appended
+> # to that subset is logWage
+# see what you have by take log(wage)
+> logWage[1:10]
+ [1] 1.21015366 0.32851207 1.51413773 0.09212329 1.52427210 1.55648008
+ [7] 2.12025954 2.05963416 0.75433635 1.54489939
+> wage[1:10]
+ [1] 3.3540 1.3889 4.5455 1.0965 4.5918 4.7421 8.3333 7.8431 2.1262 4.6875
+> log(3.354)
+[1] 1.210154
+> min(logWage)
+[1] -2.054164
+> min(wage)  #not paid so well
+[1] 0.1282
+> quantile(wage)
+      0%      25%      50%      75%     100% 
+ 0.12820  2.26260  3.48190  4.97075 25.00000 
+> table(wage < 1)
+FALSE  TRUE 
+  411    17 
+> # so we have a few very poorly paid women in this dataset it seems < 1$/hr
+
+> # onto fitting regression (predictor educ)
+> lm.posWage = lm(logWage ~ educ)
+> summary(lm.posWage)
+
+Call:
+lm(formula = logWage ~ educ)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-3.10256 -0.31473  0.06434  0.40081  2.10029 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  -0.1852     0.1852  -1.000    0.318    
+educ          0.1086     0.0144   7.545 2.76e-13 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+
+Residual standard error: 0.68 on 426 degrees of freedom
+Multiple R-Squared: 0.1179,     Adjusted R-squared: 0.1158 
+F-statistic: 56.93 on 1 and 426 DF,  p-value: 2.761e-13 
+
+> # we get a highly significant slope (but not big Rsq), 
+> # year increase in educ, fit increases 11 cents hourly wage
+> cor(logWage,educ)^2  # R-squared for the OLS equation
+[1] 0.1178826
+
+
+> # now the IV fit using fatheduc as instrument (omitted vars concern)
+> cor.test(educ, fatheduc)
+        Pearson's product-moment correlation
+data:  educ and fatheduc 
+t = 9.4255, df = 426, p-value < 2.2e-16
+alternative hypothesis: true correlation is not equal to 0 
+95 percent confidence interval:
+ 0.3337579 0.4908623 
+sample estimates:
+      cor 
+0.4154030 
+
+> # significant, fairly strong (moderate at least) correlation educ and instrument
+> instr.posWage = tsls(logWage ~ educ, ~ fatheduc)
+> summary(instr.posWage)
+
+ 2SLS Estimates
+
+Model Formula: logWage ~ educ
+
+Instruments: ~fatheduc
+
+Residuals:
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+-3.09e+00 -3.39e-01  5.25e-02 -1.99e-14  4.04e-01  2.07e+00 
+
+            Estimate Std. Error t value Pr(>|t|)
+(Intercept)  0.44110    0.44610  0.9888  0.32332
+educ         0.05917    0.03514  1.6839  0.09294
+
+Residual standard error: 0.6894 on 426 degrees of freedom
+
+> # educ slope reduced by half, se increased, no longer signif
+> # you can show by math and I meant to in class when I showed the
+> # textbook results for these data, that if the omitted variable(s)are
+> # positively related to predictor, the OLS regression will overestimate the slope
+> #easy to see from the week 1, regression recursion relations sheet that is linked
+
+
+> cov(logWage, fatheduc)/cov(educ, fatheduc) # IV estimate of slope "by hand"
+[1] 0.05917348
+ 
+> .0144/.4154 # inflation of OLS standard error for the IV regression
+[1] 0.03466538
+> #matches IV s.e.
+
+> # do two stage least squares as 2 stages
+> lm.1 = lm(educ ~ fatheduc)
+> lm.2 = lm(logWage ~ fitted(lm.1))
+> summary(lm.2)
+
+Call:
+lm(formula = logWage ~ fitted(lm.1))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-3.21264 -0.37631  0.05632  0.41728  2.06040 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)
+(Intercept)   0.44110    0.46711   0.944    0.346
+fitted(lm.1)  0.05917    0.03680   1.608    0.109
+
+Residual standard error: 0.7219 on 426 degrees of freedom
+Multiple R-Squared: 0.006034,   Adjusted R-squared: 0.003701 
+F-statistic: 2.586 on 1 and 426 DF,  p-value: 0.1086 
+
+> # matches the output from tsls pretty closely
+>  cor(logWage,fatheduc)^2 # R-square for the two-stage version of IV
+>[1] 0.006033851
+
+#### more on R-square. as we saw in the Woolridge stata output and you can see
+#       from ivreg in appendix reported R-square from the IV fit is .0934, smaller
+#       than the OLS R-square. You can compute that by 1 - SSresiduals/SSoutcome
+#       for the IV fit. I do that by hand below (to answer a prior class question.
+#       Intuitively, the instrument is not as good a predictor of outcome as
+#       the (flawed) OLS predictor. The ivreg function does give this R-square (see end).
+# > residuals(instr.posWage)
+#   [1]  0.058968499 -0.822673098  0.362952568 -1.059061876  0.254739979  0.405294911  0.732380450  0.908449000
+#   [9] -0.396848816  0.393714227  0.250736453  0.432260420 -0.417231990 -0.332816019  0.269993024 -0.793983319
+# .........
+# [417]  0.464990512 -0.360203911 -0.234894433  0.408927460 -0.206501358  0.090083425  0.117931765 -0.194811762
+# [425]  0.517671938  0.559070004  0.075263162  0.255303904
+# > mr = mean(residuals(instr.posWage))
+# > mr
+# [1] 3.956327e-14
+# > ssres = sum((residuals(instr.posWage) - mr)^2)
+# > ssres
+# [1] 202.4601
+# > ssposw = sum((logWage - mean(logWage))^2)
+# > 1 - ssres/ssposw  #matches ivreg output
+# [1] 0.09343841
+
+> 
+> # move on to Task 2, adding exper to the prediction of logWage (use exper and exper^2)
+> # exper is clearly a possible important variable, an instrument doesn't have to
+  # be important, just correlated with predictor
+> lm.posWage2 = lm(logWage ~ educ + exper + I(exper^2)) 
+# I made more typing for myself by not creating a separate variable for exper^2
+# here's the OLS estimation, adding experience to the prediction of wage
+> summary(lm.posWage2)
+
+Call:
+lm(formula = logWage ~ educ + exper + I(exper^2))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-3.08404 -0.30627  0.04952  0.37498  2.37115 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -0.5220406  0.1986321  -2.628  0.00890 ** 
+educ         0.1074896  0.0141465   7.598 1.94e-13 ***
+exper        0.0415665  0.0131752   3.155  0.00172 ** 
+I(exper^2)  -0.0008112  0.0003932  -2.063  0.03974 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+
+Residual standard error: 0.6664 on 424 degrees of freedom
+Multiple R-Squared: 0.1568,     Adjusted R-squared: 0.1509 
+F-statistic: 26.29 on 3 and 424 DF,  p-value: 1.302e-15 
+
+> # R-sq a little higher using exper; educ coeff almost identical to single predictor eq
+> # but the regression may also have omitted variable bias
+> # use motheduc and fatheduc as exogenous instruments for this regression
+# since exper is also regarded as exogenous, exper and exper^2 are included as instruments
+  by Woolridge in his stata output, the main IV emphasis is on fatheduc, motheduc as
+  instruments for educ, exper is just put in seeking better prediction (Rsq still measily .13)
+
+> instr.posWage2 = tsls(logWage ~ educ + exper + I(exper^2), ~fatheduc + motheduc + exper + I(exper^2))
+> summary(instr.posWage2)
+
+ 2SLS Estimates
+
+Model Formula: logWage ~ educ + exper + I(exper^2)
+
+Instruments: ~fatheduc + motheduc + exper + I(exper^2)
+
+Residuals:
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+-3.10e+00 -3.20e-01  5.51e-02  1.87e-15  3.69e-01  2.35e+00 
+
+             Estimate Std. Error t value Pr(>|t|)
+(Intercept)  0.048100  0.4003281  0.1202 0.904419
+educ         0.061397  0.0314367  1.9530 0.051474
+exper        0.044170  0.0134325  3.2883 0.001092
+I(exper^2)  -0.000899  0.0004017 -2.2380 0.025740
+
+Residual standard error: 0.6747 on 424 degrees of freedom
+
+> # once again using IV for omitted vars cuts down the return to educ estimate, also more than doubles se of coeff
+> # you can check these results against textbook (Wooldridge) versions using stata
+> # go to http://fmwww.bc.edu/gstat/examples/wooldridge/wooldridge15.html  Ex 15.5 (also 15.1)
+> 
+> ########################################################################################
+> ########################################################################################
+
+> # onto Task 3 simultaneous eqs: more complex modelling, we have a supply and demand eq
+> # supply, outcome hours with logWage educ age kidslt6 nwifeinc as predictors
+> # demand, logwage outcome, with hours educ and exper (Task 2) as predictors
+> # these are regarded as linked eqs as outcome from supply is predictor in demand
+
+> # so here we have linked eqs predictor in one is the outcome in the other, hours wages
+> # IV TSLS allows estimation of both, you can mess around with reduced form etc, 
+> # A guide to reduced form, estimation etc at http://elsa.berkeley.edu/eml/ra_reader/18-simul.pdf
+> # Another short tutorial is http://irving.vassar.edu/faculty/wl/Econ210/simultaneous_equations.pdf
+> # Preliminaries, test for distinct elements in each equations set of instruments
+# scan of Wooldridge p.562 at http://www-stat.stanford.edu/~rag/stat209/woolp562.pdf
+> # do the nested F-tests for identifiability
+> lm.hours =  lm( hours ~ educ + age + kids5 + nwifeinc + exper + I(exper^2))
+> summary(lm.hours)
+
+Call:
+lm(formula = hours ~ educ + age + kids5 + nwifeinc + exper + 
+    I(exper^2))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1521.23  -556.81    63.86   448.71  3310.63 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 1691.0312   312.4039   5.413 1.04e-07 ***
+educ         -17.7573    16.3887  -1.084 0.279205    
+age          -15.7096     5.6871  -2.762 0.005991 ** 
+kids5       -294.8382    96.8761  -3.043 0.002485 ** 
+nwifeinc      -0.1066     3.6261  -0.029 0.976570    
+exper         51.7395    14.5003   3.568 0.000401 ***
+I(exper^2)    -0.5758     0.4390  -1.312 0.190374    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+
+Residual standard error: 729.8 on 421 degrees of freedom
+Multiple R-squared: 0.1287,     Adjusted R-squared: 0.1163 
+F-statistic: 10.36 on 6 and 421 DF,  p-value: 1.014e-10 
+
+> lm.hoursSub =  lm( hours ~ educ + age + kids5 + nwifeinc ) 
+# I wrote out the submodel, Karen's use of update is more elegant
+> anova(lm.hoursSub, lm.hours)
+Analysis of Variance Table
+
+Model 1: hours ~ educ + age + kids5 + nwifeinc
+Model 2: hours ~ educ + age + kids5 + nwifeinc + exper + I(exper^2)
+  Res.Df       RSS  Df Sum of Sq      F    Pr(>F)    
+1    423 248021309                                   
+2    421 224200428   2  23820881 22.365 5.875e-10 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+> # Not surprisingly, since exper was signif in the full model, we can reject the composite hypoth that both coeff = 0
+> # many ways to test the composite hypoth (from elementary regression class, increment-to-Rsq is equivalent)
+> # same process for second eq identifiability
+
+  # Now go to the direct IV estimation, using all exogenous vars as instruments
+  # Results match Wooldridge text, see also
+  # http://fmwww.bc.edu/gstat/examples/wooldridge/wooldridge16.html, Ex 16.5
+> sem.hours =  tsls( hours ~ logWage + educ + age + kids5 + nwifeinc, instruments =~ educ + age + kids5 + nwifeinc + exper + I(exper^2) )
+> summary(sem.hours)
+
+ 2SLS Estimates
+
+Model Formula: hours ~ logWage + educ + age + kids5 + nwifeinc
+
+Instruments: ~educ + age + kids5 + nwifeinc + exper + I(exper^2)
+
+Residuals:
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+-4.57e+03 -6.54e+02 -3.69e+01 -4.58e-12  5.70e+02  8.37e+03 
+
+            Estimate Std. Error t value  Pr(>|t|)
+(Intercept) 2225.662    574.564  3.8737 0.0001242
+logWage     1639.556    470.576  3.4841 0.0005454
+educ        -183.751     59.100 -3.1092 0.0020032
+age           -7.806      9.378 -0.8324 0.4056640
+kids5       -198.154    182.929 -1.0832 0.2793249
+nwifeinc     -10.170      6.615 -1.5374 0.1249417
+
+Residual standard error: 1354.2045 on 422 degrees of freedom
+
+> sem.logWage =  tsls( logWage ~ hours + educ + exper + I(exper^2), instruments =~ educ + exper + I(exper^2) + age + kids5 + nwifeinc )
+> summary(sem.logWage)
+
+ 2SLS Estimates
+
+Model Formula: logWage ~ hours + educ + exper + I(exper^2)
+
+Instruments: ~educ + exper + I(exper^2) + age + kids5 + nwifeinc
+
+Residuals:
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+-3.50e+00 -2.93e-01  3.21e-02  1.48e-14  3.65e-01  2.46e+00 
+
+              Estimate Std. Error t value  Pr(>|t|)
+(Intercept) -0.6557254  0.3377883 -1.9412 5.289e-02
+hours        0.0001259  0.0002546  0.4945 6.212e-01
+educ         0.1103300  0.0155244  7.1069 5.077e-12
+exper        0.0345824  0.0194916  1.7742 7.675e-02
+I(exper^2)  -0.0007058  0.0004541 -1.5543 1.209e-01
+
+Residual standard error: 0.6794 on 423 degrees of freedom
+
+> # now isn't it interesting that with the more complex model, coeff for educ is back up to
+> # the value and signif given by the original, naive single predictor eq estimated by OLS
+> # Being an economist isn't as easy as it looks?
+> 
+==================================================================================================
+==================================================================================================
+
+Appendix: Using ivreg command in package AER
+
+Replicate tsls fits in Lab3; AER package linked in week 6
+
+
+> install.packages("AER")
+--- Please select a CRAN mirror for use in this session ---
+also installing the dependencies ‘car’, ‘lmtest’, ‘sandwich’, ‘strucchange’, ‘zoo’
+
+
+package 'car' successfully unpacked and MD5 sums checked
+package 'lmtest' successfully unpacked and MD5 sums checked
+package 'sandwich' successfully unpacked and MD5 sums checked
+package 'strucchange' successfully unpacked and MD5 sums checked
+package 'zoo' successfully unpacked and MD5 sums checked
+package 'AER' successfully unpacked and MD5 sums checked
+
+The downloaded packages are in
+        C:\Documents and Settings\Administrator\Local Settings\Temp\RtmpfPNXMz\downloaded_packages
+updating HTML package descriptions
+
+
+> library(AER)
+Loading required package: car
+Loading required package: lmtest
+Loading required package: zoo
+
+Attaching package: 'zoo'
+
+
+        The following object(s) are masked from package:base :
+
+         as.Date.numeric 
+
+Loading required package: sandwich
+Loading required package: strucchange
+Loading required package: survival
+Loading required package: splines
+
+> help(ivreg)
+
+ivreg                  package:AER                  R Documentation
+
+Instrumental-Variable Regression
+
+Description:
+
+     Fit instrumental-variable regression by two-stage least squares.
+     This is equivalent to direct instrumental-variables estimation
+     when the number of instruments is equal to the number of
+     predictors.
+
+Usage:
+
+     ivreg(formula, instruments, data, subset, na.action, weights, offset,
+       contrasts = NULL, model = TRUE, y = TRUE, x = FALSE, ...)
+
+Arguments:
+
+formula, instruments: formula specification(s) of the regression
+          relationship and the instruments. Either 'instruments' is
+          missing and 'formula' has three parts as in 'y ~ x1 + x2 | z1
+          + z2 + z3' (recommended) or 'formula' is 'y ~ x1 + x2' and
+          'instruments' is a one-sided formula '~ z1 + z2 + z3' (only
+          for backward compatibility).
+
+    data: an optional data frame containing the variables in the model.
+           By default the variables are taken from the environment from
+          which 'ivreg' is called.
+
+  subset: an optional vector specifying a subset of observations to be
+          used in  fitting the model.
+
+na.action: a function that indicates what should happen when the  data
+          contain 'NA's. The default is set by the 'na.action' option.
+
+ weights: an optional vector of weights to be used in the fitting
+          process.
+
+  offset: an optional offset that can be used to specify an a priori
+          known component to be included during fitting.
+
+contrasts: an optional list. See the 'contrasts.arg' of 
+          'model.matrix.default'.
+
+model, x, y: logicals.  If 'TRUE' the corresponding components of the
+          fit (the model frame, the model matrices , the response) are
+          returned.
+
+     ...: further arguments passed to 'ivreg.fit'.
+
+#Redo Lab3 IV fits
+
+> mroz87 =  read.table( "http://www-stat.stanford.edu/~rag/stat209/Mroz87.dat", header = T)
+> poswage = subset(mroz87, wage > 0)  # my new data subset
+> poswage$logWage =  log( poswage$wage ) # adding logWage to the data set for session
+> attach(poswage)
+> ivreg1 = ivreg(logWage ~ educ| fatheduc)
+> summary(ivreg1)
+
+Call:
+ivreg(formula = logWage ~ educ | fatheduc)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-3.0870 -0.3393  0.0525  0.4042  2.0677 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)  
+(Intercept)  0.44110    0.44610   0.989    0.323  
+educ         0.05917    0.03514   1.684    0.093 .
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+
+Residual standard error: 0.6894 on 426 degrees of freedom
+Multiple R-Squared: 0.09344,    Adjusted R-squared: 0.09131 
+Wald test: 2.835 on 1 and 426 DF,  p-value: 0.09294 
+
+> # matches tsls Task1
+
+> ivreg2 = ivreg(logWage ~ educ + exper + I(exper^2) | fatheduc + motheduc + exper + I(exper^2))
+> summary(ivreg2)
+
+Call:
+ivreg(formula = logWage ~ educ + exper + I(exper^2) | fatheduc + 
+    motheduc + exper + I(exper^2))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-3.0986 -0.3196  0.0551  0.3689  2.3493 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)   
+(Intercept)  0.0481003  0.4003281   0.120  0.90442   
+educ         0.0613966  0.0314367   1.953  0.05147 . 
+exper        0.0441704  0.0134325   3.288  0.00109 **
+I(exper^2)  -0.0008990  0.0004017  -2.238  0.02574 * 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+
+Residual standard error: 0.6747 on 424 degrees of freedom
+Multiple R-Squared: 0.1357,     Adjusted R-squared: 0.1296 
+Wald test: 8.141 on 3 and 424 DF,  p-value: 2.787e-05 
+
+> # matches tsls Task 2 exactly
+
+
+> ivreg3 = ivreg(hours ~ logWage + educ + age + kids5 + nwifeinc | educ + age + kids5 + nwifeinc + exper + I(exper^2) )
+> summary(ivreg3)
+
+Call:
+ivreg(formula = hours ~ logWage + educ + age + kids5 + nwifeinc | 
+    educ + age + kids5 + nwifeinc + exper + I(exper^2))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-4570.13  -654.08   -36.94   569.86  8372.91 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 2225.662    574.564   3.874 0.000124 ***
+logWage     1639.556    470.576   3.484 0.000545 ***
+educ        -183.751     59.100  -3.109 0.002003 ** 
+age           -7.806      9.378  -0.832 0.405664    
+kids5       -198.154    182.929  -1.083 0.279325    
+nwifeinc     -10.170      6.615  -1.537 0.124942    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+
+Residual standard error: 1354 on 422 degrees of freedom
+Multiple R-Squared: -2.008,     Adjusted R-squared: -2.043 
+Wald test: 3.441 on 5 and 422 DF,  p-value: 0.004648 
+
+> ivreg4 = ivreg(logWage ~ hours + educ + exper + I(exper^2) | educ + age + kids5 + nwifeinc + exper + I(exper^2) )
+> summary(ivreg4)
+
+Call:
+ivreg(formula = logWage ~ hours + educ + exper + I(exper^2) | 
+    educ + age + kids5 + nwifeinc + exper + I(exper^2))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-3.49800 -0.29307  0.03208  0.36486  2.45912 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -0.6557254  0.3377883  -1.941   0.0529 .  
+hours        0.0001259  0.0002546   0.494   0.6212    
+educ         0.1103300  0.0155244   7.107 5.08e-12 ***
+exper        0.0345824  0.0194916   1.774   0.0767 .  
+I(exper^2)  -0.0007058  0.0004541  -1.554   0.1209    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+
+Residual standard error: 0.6794 on 423 degrees of freedom
+Multiple R-Squared: 0.1257,     Adjusted R-squared: 0.1174 
+Wald test: 19.03 on 4 and 423 DF,  p-value: 2.108e-14 
+
+> 
+END 
+Lab3 Rogosa session
+==================================================

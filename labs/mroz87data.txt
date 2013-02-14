@@ -1,0 +1,57 @@
+Mroz87 U.S. Women’s Labor Force Participation
+
+I put the data at
+http://www-stat.stanford.edu/~rag/stat209/Mroz87.dat
+
+Data available in various R packages--micEcon, sampleSelection, Ecdat  etc
+
+Description
+
+The Mroz87 data frame contains data about 753 married women. 
+These data are collected within the "Panel Study of Income 
+Dynamics" (PSID). Of the 753 observations, the first 428 are for 
+women with positive hours worked in 1975, while the remaining 325 
+observations are for women who did not work for pay in 1975. A 
+more complete discussion of the data is found in Mroz (1987), 
+Appendix 1.
+
+Usage
+data(Mroz87)
+
+Format
+This data frame contains the following columns:
+lfp Dummy variable for labor-force participation.
+hours Wife’s hours of work in 1975.
+kids5 Number of children 5 years old or younger.
+kids618 Number of children 6 to 18 years old.
+age Wife’s age.
+educ Wife’s educational attainment, in years.
+wage Wife’s average hourly earnings, in 1975 dollars.
+repwage Wife’s wage reported at the time of the 1976 interview.
+hushrs Husband’s hours worked in 1975.
+husage Husband’s age.
+huseduc Husband’s educational attainment, in years.
+huswage Husband’s wage, in 1975 dollars.
+faminc Family income, in 1975 dollars.
+mtr Marginal tax rate facing the wife.
+motheduc Wife’s mother’s educational attainment, in years.
+fatheduc Wife’s father’s educational attainment, in years.
+unem Unemployment rate in county of residence, in percentage points.
+city Dummy variable = 1 if live in large city, else 0.
+exper Actual years of wife’s previous labor market experience.
+nwifeinc Non-wife income.
+wifecoll Dummy variable for wife’s college attendance.
+huscoll Dummy variable for husband’s college attendance.
+
+Source
+
+Mroz, T. A. (1987) The sensitivity of an empirical model of 
+married women’s hours of work to economic and statistical 
+assumptions. Econometrica 55, 765–799.
+PSID Staff, The Panel Study of Income Dynamics, Institute for 
+Social ResearchPanel Study of Income Dynamics, University of 
+Michigan, http://psidonline.isr.umich.edu.
+References
+Fox, J. (2004) car: The Companion to Applied Regression Libary -
+An R and S-PLUS Companion to Applied Regression, 
+http://socserv.mcmaster.ca/jfox/Books/Companion/car.html.

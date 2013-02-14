@@ -1,0 +1,286 @@
+Stat209/HRP239/Ed260      Feb 8 2013
+
+
+         Take Home Problems #1
+
+
+Usual Honor Code procedures:
+You may use any inanimate resources--no collaboration. This work 
+is done under Stanford's Honor Code.
+
+Questions regarding wording, interpretation etc are encouraged.
+Write to Rogosa. Any useful info, if needed, will be posted on
+the assignments page below the TH1 link
+
+Solutions for these problems are to be submitted in hard-copy 
+form, in class 2/14/13.  Given that these problems are untimed, some care 
+should be taken in presentation, clarity, format. Especially 
+important is to give full and clear answers to questions, not 
+just to submit unannotated computer output, although relevant 
+output should be included. Production values are at your discretion.
+
+or if you are away, easiest (for me) option is
+Statistics Department Fax (address to Rogosa)
+Department of Statistics -- Sequoia Hall
+390 Serra Mall
+Stanford University
+Stanford, CA 94305-4065
+Phone: (650) 723-2620
+Fax: (650) 725-8977
+
+This exam covers the content of weeks 1 through 4, also Computer Labs 1 and 2. 
+
+------------------------------
+Problem 1. 
+Observational Studies, associations
+
+Can you handle the stress?
+
+An observational study with survey questionnaire data from 373 subjects,
+undergrads in introductory psychology classes (of course), was shown as
+Example C in the week 3 path analysis introduction handouts:
+
+Life events, fitness, hardiness, and health: A simultaneous analysis of proposed 
+stress-resistance effects.
+Roth, David L.; Wiebe, Deborah J.; Fillingim, Roger B.; Shay, Kathleen A.
+Journal of Personality and Social Psychology, Vol 57(1), Jul 1989, 136-142.
+
+ which you can find at http://psycnet.apa.org/journals/psp/57/1/136.pdf
+but you don't need anything more than the handout excerpt for this task
+(which was taken from Kline's structural equation models text).
+
+Let's consider the three endogenous variables in the path diagram taken
+from Kline's text. Data on 373 subjects measured by
+"Illness" from the Seriousness of Illness rating Scale
+"Stress" stressful life experiences from the Life Experiences Survey
+"Fitness" from a Fitness Questionnaire
+
+You are given correlations and standard deviations.
+
+One obvious question is whether "fitness" may be at least protective 
+against "illness", and the correlation of -.29 from this sample at least 
+says that those that have higher levels of fitness tend to (at least weakly)
+have lower levels of reported illness.
+
+part a. spurious correlation?
+One way to look at this is to ask whether the correlation between
+fitness and illness is "spurious" in the sense that stress may 
+decrease fitness (too depressed to go to the gym) and increase illness.
+Construct a measure and significance test (approximate is fine) for the 
+spurious correlation hypothesis.
+
+part b.
+Let us instead treat "stress" as a possible mediator variable in the relation
+between "fitness" and "illness". Use the standard mediator variable
+methods (credited to Barron-Kenny) to estimate the mediation effect 
+(point estimate, standard error, asymptotic significance test) of stress.
+Do this for both the standardized and unstandardized metrics.
+
+part c. 
+Consider the effects of errors of measurement on the your results. If
+you were told (from high above) that the fitness measure has 
+reliability .8 and that the stress measure has reliability .7 ,
+repeat the calculations in part b for the standardized metric.
+Compare these results with what you found in part b. 
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+Problem 2.
+Potential Outcomes, Encouragement designs
+
+
+part 1
+Start out with the salt example from week 2 lecture. 
+Feasibility and efficacy of sodium reduction in the Trials of Hypertension Prevention, phase I
+Trials of Hypertension Prevention Collaborative Research Group.
+S K Kumanyika, P R Hebert, J A Cutler, V I Lasser, C P Sugars, L Steffen-Batey, A A Brewer, MI. 
+Hypertension doi: 10.1161/01.HYP.22.4.5021993;22:502-512
+http://hyper.ahajournals.org.laneproxy.stanford.edu/content/22/4/502.full.pdf+html
+
+Publication tables  give you the numbers you need on the results for this encouragement design: 
+Table 3 and  Table 5 (repeated approximately in the abstract). 
+Subjects are randomly assigned to intervention or control(327, 417) and Table 3 shows you 
+these are approximately equivalent at baseline. "Active"
+(treatment) subjects are encouraged to reduce dietary sodium intake (assessed by sodium excretion). 
+Outcome (measured 18 months after intervention initiated) we will use is systolic blood pressure 
+(salt is supposed to be bad for blood pressure) with the results in Table 5.  
+
+Questions:
+From the results in Table 3 (use 18-month change from baseline) and Table 5 (use 18-month systolic)
+estimate the dose-response relation for decrease in systolic blood pressure for each unit
+decrease in salt intake (as measured by sodium excretion). What strong assumption did you need to
+make to justify this estimator? Briefly justify that assumption for this study?
+-----------------------------
+
+part 2
+The immigration debate is in the news.....
+
+In what we will treat as an encouragement design, Brader et al. (2008) conducted a randomized experiment 
+where subjects are exposed to different media stories about immigration, and the authors investigated how 
+their framing (i.e. the spin and tone of the stories) influences attitudes and political behavior regarding 
+immigration policy. In this example, the treatment is expected to increase the level of respondents' 
+emotional response, which in turn is hypothesized to make subjects more likely to send a letter to his or
+her member of Congress. The response variable we will look at here is measure of anxiety (emo) which is 
+influenced by the framing treatment (treat) The outcome variable is a binary variable indicating whether or 
+not the participant agreed to send a letter about immigration policy to his or her member of Congress (cong_mesg)
+
+Brader T, Valentino NA, Suhat E (2008). What Triggers Public Opposition to Immigration?
+Anxiety, Group Cues, and Immigration." American Journal of Political Science, 52(4),
+959-978.
+jstor link  http://www.jstor.org/stable/25193860?origin=JSTOR-pdf
+
+
+The vignette for the mediation package linked in week 2 has data "framing"
+for this encouragement design.
+http://cran.r-project.org/web/packages/mediation/vignettes/mediation.pdf
+So you need to get the framing data from the mediation package
+
+Variables we will use in this exercise are
+
+cong_mesg:     Whether subjects requested sending an anti-immigration message to Congress on their behalf.
+treat:   Product of the two treatment variables. In the original study the authors only find this cell to be significant.
+emo:    Measure of subjects' negative feeling during the experiment. A numeric scale ranging between 3 and 12 where 3 
+           indicates the most negative feeling.
+gender:  Subjects' gender
+
+A complication that we will work around (kludge) for these interesting data is that the outcome variable here is
+binary (not measured/continuous as we used in our examples). Switching over to appropriate logistic regression
+methods would be best but since that would be slightly new material, I'll stick to linear models for proportions
+or probabilities rather than the "correct" linear models for the logit.
+
+Just for a check on obtaining the data, here is what I have with 265 subjects, 68 "treated"
+> table(treat)
+treat
+  0   1 
+197  68 
+> dim(framing)
+[1] 265  15
+
+So here are the pieces of analysis you can obtain (among other summaries):
+  fit emo ~ treat
+  fit cong_mesg ~ emo by OLS even though binary outcome (logistic would be appropriate but here doesn't make much difference in fitted probabilities)
+  fit cong_mesg ~ treat by OLS even though binary outcome, binary predictor--what OLS will give you is 
+           "slope" Prob(cong_mesg =1|treat = 1) - Prob(cong_mesg =0|treat = 0) (change in outcome as treat moves from 0 to 1)
+            "intercept" Prob(cong_mesg =0|treat = 0)
+
+Questions:
+ Is there a significant effect of treatment on emo?
+ Is there a significant effect of treatment on cong_mesg?
+ Estimate the effect on probability of sending congressional message of a unit change in "emo" (negative feelings). Compare the
+ "path analysis" estimator (see week 3) for the encouragement design with the estimator you used in part 1. Why do the
+ needed assumptions in this study seem far less reasonable than for the salt example?
+ Repeat these questions just for the females in the study. Find anything different?
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+Problem 3
+Multilevel Data, Random effects models
+The data for this problem are  Exam obtained from the mlmRev package,
+a collection of datasets that Doug Bates uses for illustrating
+lme4 versus other computing (non-R) options.
+
+These data were originally used in 
+Goldstein, H., Rasbash, J., et al (1993). A multilevel analysis of school examination results. 
+Oxford Review of Education 19: 425-433 
+http://www.jstor.org/stable/1050563?origin=JSTOR-pdf
+
+-------------------------
+Further explanation (not-critical for this problem) is at
+http://cran.r-project.org/web/packages/mlmRev/vignettes/MlmSoftRev.pdf
+Examples from Multilevel Software Comparative Reviews
+Douglas Bates February 2005, with updates up to October 17, 2011
+Abstract
+The Center for Multilevel Modelling at the Institute of Education,
+London maintains a web site of \Software reviews of multilevel mod-
+eling packages". The data sets discussed in the reviews are available
+at this web site. We have incorporated these data sets in the mlmRev
+package for R and, in this vignette, provide the results of fitting 
+several models to these data sets.
+
+Section 2.1 of this vignette has discussion of the Exam data
+----------------------------------
+-----------------
+The docs for the Exam data
+Exam {mlmRev}	R Documentation
+Exam scores from inner London
+Description
+Exam scores of 4,059 students from 65 schools in Inner London.
+Usage
+data(Exam)
+
+Format
+A data frame with 4059 observations on the following 9 variables.
+
+school
+    School ID - a factor.
+normexam
+    Normalized exam score.
+(note: publication explains: "General Certificate of Secondary Examination (GCSE) grades in mathematics and English")
+schgend
+    School gender - a factor. Levels are mixed, boys, and girls.
+schavg
+    School average of intake score.
+vr
+    Student level Verbal Reasoning (VR) score band at intake - a factor. Levels are bottom 25%, mid 50%, and top 25%.
+intake
+    Band of student's intake score - a factor. Levels are bottom 25%, mid 50% and top 25%./
+standLRT
+    Standardised LR test score.
+(note: publication explains these are: "scores on a common reading test taken when they were 11 years old-the London Reading Test (LRT)"
+sex
+    Sex of the student - levels are F and M.
+type
+    School type - levels are Mxd and Sngl.
+student
+    Student id (within school) - a factor
+
+Source
+http://multilevel.ioe.ac.uk/softrev/exam.html
+-------------------------------
+note: conveniently, this data set appears to provide schavg as the school mean of standLRT
+(though you should verify that before using it)
+
+--------------------------------------------------------
+
+part 1. Multiple Levels of Analysis
+
+Compute the traditional quantities for normexam predicted by the prior test score standLRT
+
+a. aggregation bias, for using school means in place of individual data
+b. contextual effect. (supposed) estimate of the effect on normexam for a student being in a school
+   with one unit higher mean score on standLRT, student "held constant"
+
+-----------------------------------------------------
+part 2. Gender differences in outcome (the "gender gap") for the coed ("mixed" schools)
+
+Pick off the mixed (i.e. coed) schools (i.e. schools that have both males and female students)
+For reference, I used the type ("Mxd") indicator and get 35 schools, total of 2169 students (1110 males).
+
+note: if I were doing this for real, I would likely question hard whether schools 47 and 43 are really
+coed schools; why am I concerned?
+
+Using the random effects models (lme, lmer) investigate gender differences in outcomes (normexam) 
+for the coed schools
+
+c. give a point estimate and standard error for gender differences in outcome for these multilevel data
+d. do these gender differences have any association with "intake" (i.e. school mean on standLRT)?
+In parts c and d
+   Address with a formal statistical model. Write out the model clearly in Level 1, Level 2 format.
+   Show your model estimation and results.
+   Compare those results with Smart-first-year-student descriptive measures, including the relevant 
+   graphics (scatterplot, boxplots)
+----------------------------
+NOTE 2/12. We made it to 3d before a serious wording problem arose. 
+As noted on Assignments page Tuesday evening. There is a wording problem in Question 3,  part d.  
+Where I say "do these gender differences have any association with "intake" (i.e. school mean on standLRT)?" 
+I want you to use school mean on standLRT as the measure of intake. 
+I regret not using the word input instead of intake in phrasing part d. 
+There is justifiable confusion I created here, even though I tried to be explicit with the (i.e. ,,,) construction
+=======================================
+
+END TH1 2013
+
+
+
+

@@ -1,0 +1,97 @@
+Stat209/Ed260 D Rogosa   1/31/13
+
+Assignment 4.  Multilevel data, ecological fallacy
+
+----------------------------------------------------------------------------------------
+NOTE: Main event Week 4: R multilevel (random effects) modelling (lme, lmer) exercises in Lab 2
+----------------------------------------------------------------------------------------
+
+
+
+Problem 1. Grouping and simple regressions
+
+Illustrate relations among individual level (ignoring groups)
+group-level, and relative standing regression results.
+
+      Part I groups formed on X
+
+Create 200 individual level observations on X and Y having
+correlation around .65.
+I started with x values 1:200 (simple integers) for convenience,
+but you can be fancier.
+Do an individual level Y on X regression
+
+Group these 200 individuals into 10 groups of size 20 on the
+basis of the X-values (i.e. group 1 contains the individuals
+with the smallest 20 X-values, group 10 contains the individuals
+with the largest 20 X-values). So within-groups will be as
+homogeneous as possible on X and between group differences
+will be largest.
+
+do a regression on group means (between groups regression)
+these may be classroom means for ex, and you may not have individual
+level data.
+
+get a relative standing measure: individual score minus group mean
+for each individual.
+Do a relative standing regression
+
+
+Now do the multiple regression analyses (Burstein, Deleuuw & Kreft)
+1. "context" 
+     Y on X and X-bar  (X-bar is an attribute of each individual)
+2. "Cronbach" (Kreft's term) 
+     Y on X minus X-bar and X-bar  (predictors uncorrelated)
+
+demonstrate the coefficients match the basic relations shown in lecture
+
+        Part II groups formed independent of X (random)
+
+repeat the analyses of Part I using a different (as different
+as can be) mechanism for assigning individuals to groups.
+Form the 10 groups of size 20 at random, making the groups
+heterogeneous on X within group and similar between groups.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Enrichment problem (better to spend time on Lab2 etc)
+ Ecological fallacy: Is Radon good for you?
+
+------------------------------------
+treat this as an extended example of ecological bias.
+At one time I went through the Robbins paper in class...
+Solutions show you data generation procedures and illustrate the
+sometimes very large effects of aggregation bias. 
+If the topic interests read through the
+G-R paper to see the point.
+--------------------------------------
+Consider the artificial data example described in Ex 3
+p.750 Greenland and Robbins American Journal of Epidemiology Vol. 139, 
+No. 8: 747-760 
+Ecologic Studies—Biases, Misconceptions, and Counterexamples 
+(article linked on class page, week 4)
+
+intro their Example 3
+Suppose that our study data are limited to regional values of 
+mean radon, mean smoking (in packs per day), and lung-cancer 
+rates among males aged 70-74 years, for 41 regions indexed by 
+r = 0, . . . , 40. 
+
+follow their example set up and create your own artificial data example
+and produce the regression function and plot in their figure 1
+for the effect of radon levels on lung cancer rates
+
+from G&R
+you are demonstrating the ecological fallacy because "the 
+regressions yield an inverse association of radon and lung 
+cancer, despite the fact that radon is a positive risk factor in 
+the underlying model used to generate the data,"
+
+"Even though the lung-cancer rates  show the strong upward 
+relation to smoking one would expect from model 1, and the 
+ecologic correlation between radon and smoking is only 0.01, 
+there is a significant negative ecologic association of radon 
+with lung cancer rates."
+--------------------------------------------------------------------
+
+====================
+end HW4

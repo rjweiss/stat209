@@ -1,0 +1,598 @@
+Stat209/Ed260 D Rogosa   1/31/13
+
+Lab 2 Rogosa R Session NLME (historical version)
+
+Best to read through, at least, the formal lab write-up with
+exposition and commands, before working through this version.
+For this version of the Lab 2 I focused on reading in the two
+data files, constructing a combined data file that was amenable
+to lme, and the carrying out the mixed-model analysis shown in
+the HSB class handout.
+A fuller exposition is the Fox lme tutorial linked in the week 4 primary readings
+http://cran.r-project.org/doc/contrib/Fox-Companion/appendix-mixed-models.pdf
+Section 3 is the HSB example; further examples on longitudinal; data are
+for week 9.
+Another resource/treatment for those who have done alot of R
+is John Fox's "Script for web appendix on mixed models" 
+doing fancier graphics etc
+http://socserv.mcmaster.ca/jfox/Books/Companion/mixed-models.txt
+
+For this Lab version we use the venerable lme from nlme library; Doug Bates
+has a newer version lme4, in which the lme command is replaced with lmer
+I redo all this (with less chit-chat) in what is called the "lmer version" 
+A description of that is in the week 4 readings. Syntax differs a little,
+enough to make dealing with both at once a bit of a head-ache 
+You can't have both nlme and lme4 active in an R-session. If you want to
+juggle these, before bringing in lme4 for ex clear out nlme by
+>detach("package:nlme")
+ 
+
+
+I posted other analyses of these HSB data from the Bryk-Raudenbush text
+and from the HLM program docs at
+http://www-stat.stanford.edu/~rag/stat209/hsbanalyses.pdf
+I don't have time to show these in lecture, as just another version of the same.
+
+
+note I originally did this lab using 2.5.1 (but nlme is part of
+this distribution as it is with current 2.14.1)
+You can see what packages you have by
+>library()
+
+R version 2.5.1 (2007-06-27)
+Copyright (C) 2007 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+
+
+> library(nlme)
+# The data sets we need are part of the nlme package
+#(along with the random effects functions--lmList. lme etc,
+#so you could look at the nlme package documentation from CRAN
+#or the equivalent functionality from another program such as PROC
+#MIXED in SAS and the Singer readings do these in PROC MIXED)
+
+#Complete docs (including datasets) for nlme at 
+   http://cran.r-project.org/web/packages/nlme/nlme.pdf
+#Dated 1/16/12, so currently maintained
+
+> data(MathAchieve)
+# this loads the individual data file
+------------------------------------------------------
+for completeness I insert here the documentation
+MathAchieve {nlme}	R Documentation
+Mathematics achievement scores
+Description
+
+The MathAchieve data frame has 7185 rows and 6 columns.
+Format
+
+This data frame contains the following columns:
+
+School
+    an ordered factor identifying the school that the student attends 
+Minority
+    a factor with levels No Yes indicating if the student is a member of a minority racial group. 
+Sex
+    a factor with levels Male Female 
+SES
+    a numeric vector of socio-economic status. 
+MathAch
+    a numeric vector of mathematics achievement scores. 
+MEANSES
+    a numeric vector of the mean SES for the school. 
+
+Details
+
+Each row in this data frame contains the data for one student.
+Examples
+
+data(MathAchieve)
+summary(MathAchieve)
+------------------------------------------------------
+
+# here is a lsiting the first 10 cases (all from the same school)
+# it is always good to look at the data each time you read or modify
+
+> MathAchieve[1:10,]
+
+   School Minority    Sex    SES MathAch MEANSES
+1    1224       No Female -1.528   5.876  -0.428
+2    1224       No Female -0.588  19.708  -0.428
+3    1224       No   Male -0.528  20.349  -0.428
+4    1224       No   Male -0.668   8.781  -0.428
+5    1224       No   Male -0.158  17.898  -0.428
+6    1224       No   Male  0.022   4.583  -0.428
+7    1224       No Female -0.618  -2.832  -0.428
+8    1224       No   Male -0.998   0.523  -0.428
+9    1224       No Female -0.888   1.527  -0.428
+10   1224       No   Male -0.458  21.521  -0.428
+> dim(MathAchieve) # number of rows and columns
+[1] 7185    6
+
+#From below tally of students in each sector (just about even)
+  Public Catholic 
+    3642     3543 
+
+
+
+# read in school-level file
+> data(MathAchSchool)
+-----------------------------
+here's the documentation for that file
+MathAchSchool {nlme}	R Documentation
+School demographic data for MathAchieve
+Description
+
+The MathAchSchool data frame has 160 rows and 7 columns.
+Format
+
+This data frame contains the following columns:
+
+School
+    a factor giving the school on which the measurement is made. 
+Size
+    a numeric vector giving the number of students in the school 
+Sector
+    a factor with levels Public Catholic 
+PRACAD
+    a numeric vector giving the percentage of students on the academic track 
+DISCLIM
+    a numeric vector measuring the discrimination climate 
+HIMINTY
+    a factor with levels 0 1 
+MEANSES
+    a numeric vector giving the mean SES score. 
+
+Details
+
+These variables give the school-level demographic data to accompany the MathAchieve data.
+Examples
+
+data(MathAchSchool)
+----------------------------------------------
+# Having separate individ and school files is a feature of the HLM program,
+# both R and SAS use a single file. Doug Bates has redone almost all the Bryk
+# Raudenbush text examples in R, in one report or another
+
+
+#here's the first 10 cases
+> MathAchSchool[1:10,]
+     School Size   Sector PRACAD DISCLIM HIMINTY MEANSES
+1224   1224  842   Public   0.35   1.597       0  -0.428
+1288   1288 1855   Public   0.27   0.174       0   0.128
+1296   1296 1719   Public   0.32  -0.137       1  -0.420
+1308   1308  716 Catholic   0.96  -0.622       0   0.534
+1317   1317  455 Catholic   0.95  -1.694       1   0.351
+1358   1358 1430   Public   0.25   1.535       0  -0.014
+1374   1374 2400   Public   0.50   2.016       0  -0.007
+1433   1433  899 Catholic   0.96  -0.321       0   0.718
+1436   1436  185 Catholic   1.00  -1.141       0   0.569
+1461   1461 1672   Public   0.78   2.096       0   0.683
+> dim(MathAchSchool)
+[1] 160   7
+> table(MathAchSchool$Sector) # number of schools of each type
+  Public Catholic 
+      90       70
+#####################################################
+  Next series of activities are data management, cleaning up
+  these two data sets, and creating one combined (individ
+  and school attributes) data set
+################################################
+
+# get correct mean school ses, using individ data
+> attach(MathAchieve)
+> mses = tapply(SES, School, mean) # mean of SES for each school
+> detach(MathAchieve)
+> mses
+        8367         8854         4458         5762         6990         5815 
+ 0.025571429 -0.756750000 -1.049458333 -1.193945946 -0.489698113 -0.680000000 
+        7172         4868         7341         1358         4383         2305 
+-0.289818182  0.361117647 -0.164078431 -0.019666667  0.073200000 -0.628000000 
+    and so forth
+# now start a new data frame and add variables from the MathAchieve file to it
+# could have also have done this by subsetting from MathAchieve
+
+> Bryk = as.data.frame(MathAchieve[, c("School", "SES", "MathAch" )])
+> names(Bryk) = c("school", "ses", "mathach")
+
+> Bryk[1:10,]
+   school    ses mathach
+1    1224 -1.528   5.876
+2    1224 -0.588  19.708
+3    1224 -0.528  20.349
+4    1224 -0.668   8.781
+5    1224 -0.158  17.898
+6    1224  0.022   4.583
+7    1224 -0.618  -2.832
+8    1224 -0.998   0.523
+9    1224 -0.888   1.527
+10   1224 -0.458  21.521
+
+> #individ level file, add a fourth column, the mean SES for each school
+> Bryk$meanses = mses[as.character(Bryk$school)] #cute trick for linking school and meanses
+
+> Bryk[1:10,]
+   school    ses mathach   meanses
+1    1224 -1.528   5.876 -0.434383
+2    1224 -0.588  19.708 -0.434383
+3    1224 -0.528  20.349 -0.434383
+4    1224 -0.668   8.781 -0.434383
+5    1224 -0.158  17.898 -0.434383
+6    1224  0.022   4.583 -0.434383
+7    1224 -0.618  -2.832 -0.434383
+8    1224 -0.998   0.523 -0.434383
+9    1224 -0.888   1.527 -0.434383
+10   1224 -0.458  21.521 -0.434383
+> # we have added group-level variable mean(ses) to individ-level file
+
+> Bryk$cses = Bryk$ses - Bryk$meanses 
+# the centered individual ses, relative standing on the ses measure for a student within school
+# we need this so that intercept in Level I model is mean achievement for school
+
+> Bryk[1:10,]
+   school    ses mathach   meanses        cses
+1    1224 -1.528   5.876 -0.434383 -1.09361702
+2    1224 -0.588  19.708 -0.434383 -0.15361702
+3    1224 -0.528  20.349 -0.434383 -0.09361702
+4    1224 -0.668   8.781 -0.434383 -0.23361702
+5    1224 -0.158  17.898 -0.434383  0.27638298
+6    1224  0.022   4.583 -0.434383  0.45638298
+7    1224 -0.618  -2.832 -0.434383 -0.18361702
+8    1224 -0.998   0.523 -0.434383 -0.56361702
+9    1224 -0.888   1.527 -0.434383 -0.45361702
+10   1224 -0.458  21.521 -0.434383 -0.02361702
+> # added the individ attribute, relative standing, ses minus school meanses
+
+> sector = MathAchSchool$Sector
+> names(sector) = row.names(MathAchSchool)
+> Bryk$sector = sector[as.character(Bryk$school)]
+> Bryk[1:10,]
+   school    ses mathach   meanses        cses sector
+1    1224 -1.528   5.876 -0.434383 -1.09361702 Public
+2    1224 -0.588  19.708 -0.434383 -0.15361702 Public
+3    1224 -0.528  20.349 -0.434383 -0.09361702 Public
+4    1224 -0.668   8.781 -0.434383 -0.23361702 Public
+5    1224 -0.158  17.898 -0.434383  0.27638298 Public
+6    1224  0.022   4.583 -0.434383  0.45638298 Public
+7    1224 -0.618  -2.832 -0.434383 -0.18361702 Public
+8    1224 -0.998   0.523 -0.434383 -0.56361702 Public
+9    1224 -0.888   1.527 -0.434383 -0.45361702 Public
+10   1224 -0.458  21.521 -0.434383 -0.02361702 Public
+> #so we added a sector (pub/Cath) indicator to the individ level file
+> dim(Bryk)
+[1] 7185    6
+
+# now our data set is complete
+
+> remove(sector) #clean up variable (use it within Bryk dataset)
+> attach(Bryk) #we can refer to variables by simple name
+> table(sector) #get the student breakdown shown above
+sector
+  Public Catholic 
+    3642     3543
+
+It may be a good idea to write out the Bryk data frame since we worked hard to construct
+this.  I could have simply started this by reading in that data set
+That is, at the end of lab2, a command such as (where you put in your own path)
+ > write.table(Bryk, file = "D:\\drr11\\stat209\\labs\\brykdata", quote = FALSE)
+would have created the 6 cols that we worked hard to build up in this Lab2
+
+#############################################################################
+  Part II. Multi-level analysis
+
+# now do the within-school regressions, math on SES, via OLS, for each sector in turn
+# and show coeficients. Using lmList
+# Best to use cses as the indiv predictor, as then the intercept
+# of each regression would be the mean mathach
+# lmList (see docs) is the tool for doing all the within-school regressions in one pass
+# here we do the within-school regression for each sector (and then compare)
+# cathRegC = lmList(mathach ~ cses| school, subset = sector == "Catholic", data = Bryk)
+# pubRegC = lmList(mathach ~ cses| school, subset = sector == "Public", data = Bryk)
+> table(MathAchSchool$Sector)
+
+  Public Catholic 
+      90       70 
+
+> cathRegC = lmList(mathach ~ cses| school, subset = sector == "Catholic", data = Bryk)
+> pubRegC = lmList(mathach ~ cses| school, subset = sector == "Public", data = Bryk)
+
+> coef(pubRegC) #lists intercept (mean(mathach) and slope for each of the 90 Public schools
+     (Intercept)        cses
+8367    4.552786  0.25037481
+8854    4.239781  1.93884461
+4458    5.811396  1.13183718
+5762    4.324865 -1.01409923
+6990    5.976792  0.94769026
+5815    7.271360  3.01800184
+7341    9.794176  1.70370049
+1358   11.206233  5.06800874
+4383   11.465680  6.18019316
+3088    9.145846  1.79134272
+8775    9.467000  1.00145622
+7890    8.341098 -0.65596791
+6144    8.545070  2.77027083
+6443    9.475533 -0.74334668
+6808    9.286114  2.27610417
+2818   13.872833  2.80240778
+9340   11.178552  3.30949739
+5783   13.150345  3.11405659
+3013   12.610830  3.83979913
+7101   11.849929  1.29545472
+2639    6.615476 -0.63010463
+3377    9.186711 -0.74685357
+1296    7.635958  1.07595915
+4350   11.855424  4.37191824
+9397   10.355468  2.44644371
+2655   12.345173  5.22703806
+9292   10.279632  0.75867588
+8983   10.992000  1.38594141
+8188   12.740967  4.39759465
+4410   13.472976  2.76019657
+8707   12.883938  3.39153230
+1499    7.660358  3.63473417
+8477   12.522243  3.81215624
+1288   13.510800  3.25544868
+6291   10.107314  3.98086905
+1224    9.715447  2.50858170
+3967   12.035077  3.31106817
+6415   11.860204  3.53007531
+9550   11.089138  3.89193777
+6464    7.091621  1.00349366
+5937   16.775966  1.03961575
+7919   14.849973  3.98937031
+3716   10.368659  5.86378696
+1909   14.423321  2.85479025
+2651   11.084316  4.89905964
+2467   10.147519  3.13713485
+1374    9.728464  3.85432284
+6600   11.703893  4.70428938
+3881   11.949220  2.39070579
+2995    9.546109  1.43231309
+5838   13.689613  1.85305195
+9158    8.545170  3.86121158
+8946   10.375086  1.69048215
+7232   12.542635  5.00160032
+2917    7.978953  1.13585350
+6170   14.181048  4.81178434
+2030   12.078191  1.41198038
+8357   14.381852  2.67578156
+8531   13.528683  3.31822792
+4420   13.874156  2.95866415
+3999   10.944043  3.56697524
+4325   13.240000  2.75604958
+6484   12.912400  0.60567730
+6897   15.097633  3.58048769
+7734   10.559636  6.03522862
+8175   11.698091  1.61237121
+8874   12.055028  4.09630389
+9225   14.667333  2.88589215
+5640   13.160105  3.82774230
+6089   15.569576  1.69245494
+2768   10.886920  3.51228023
+5819   12.138900  1.97252104
+6397   12.796100  2.75900524
+1461   16.842636  6.26649691
+1637    7.024111  3.11680644
+1942   18.110897  0.08938349
+1946   12.908436  3.58583321
+2336   16.517702  1.90497358
+2626   13.396605  4.09967961
+2771   11.844109  4.26818800
+3152   13.209038  2.76824957
+3332   14.278158  2.03095286
+3351   11.465179  2.45503986
+3657    9.521176  3.73590722
+4642   14.599033  3.27238611
+7276   12.679396  3.77336399
+7345   11.338554  4.21192377
+7697   15.721781  3.13621972
+8202   11.712429  3.70590198
+8627   10.883717  1.86955959
+
+> coef(cathRegC) #lists intercept (mean(mathach) and slope for each of the 70 Cath schools
+     (Intercept)        cses
+7172    8.066818  0.99448053
+4868   12.310176  1.28647122
+2305   11.137761 -0.78211116
+8800    7.335937  2.56812536
+5192   10.409500  1.60349497
+4523    8.351745  2.38078920
+6816   14.538236  1.35271694
+2277    9.297607 -2.01502640
+8009   14.084723  1.55687204
+4530    9.055698  1.64742597
+9021   14.696661  2.52415849
+4511   13.409034  0.04251038
+6578   11.994000  2.39054400
+9347   13.538754  2.68599393
+3705   10.331689  1.15849738
+3533   10.409042 -0.31177009
+4253    9.412862 -0.39954421
+7342   11.166414  1.01245787
+3499   13.276526  0.99238234
+7364   14.172136  0.25949653
+5650   14.273533  0.68061888
+2658   13.396156  2.62990138
+9508   13.574657  3.95379067
+4292   12.864354 -0.16060800
+8857   15.296938  0.80222326
+1317   13.177688  1.27391282
+2629   14.907772  0.22234915
+4223   14.622622  2.48658514
+1462   10.495561 -0.82880861
+4931   13.790810  0.91184501
+5667   13.778230  3.52296571
+5720   14.282302  2.46630669
+3498   16.390453 -0.13108527
+3688   14.656256  1.53672220
+8165   16.451224  1.80224301
+9104   16.832109  1.49398346
+8150   14.852364 -0.18571088
+4042   14.315422  1.69362361
+6074   13.779089  1.52908771
+1906   15.983170  2.14550546
+3992   14.645208  0.53787533
+4173   12.724659  3.36567036
+5761   11.138058  3.10801055
+7635   15.065529  2.44847402
+2458   13.985684  2.95669443
+3610   15.354953  2.95584910
+3838   16.062815  0.59789922
+9359   15.270623 -0.83347896
+2208   15.404667  2.63664069
+1477   14.228468  1.23060592
+3039   16.963857  2.95566676
+1308   16.255500  0.12602422
+1433   19.719143  1.85429439
+1436   18.111614  1.60056175
+2526   17.053000  0.15950396
+2755   16.476511  0.56049993
+2990   18.447917  1.32453982
+3020   14.395271  1.65367684
+3427   19.715592 -0.48816617
+5404   15.414982  1.21423377
+5619   15.416242  5.25753341
+6366   15.656397  1.51752409
+6469   18.455719  1.75528869
+7011   13.813576  5.07465093
+7332   14.636104  2.46320360
+7688   18.422315  0.11634493
+8193   16.232256  2.33521174
+8628   16.528377  1.23139333
+9198   19.092290  2.61054903
+9586   14.863695  1.67208118
+
+
+> tapply(mathach, school, mean) # check that intercepts from lmList are group outcome means
+     8367      8854      4458      5762      6990      5815      7172      4868      7341      1358 
+ 4.552786  4.239781  5.811396  4.324865  5.976792  7.271360  8.066818 12.310176  9.794176 11.206233 
+     4383      2305      8800      3088      8775      7890      6144      6443      5192      6808 
+11.465680 11.137761  7.335938  9.145846  9.467000  8.341098  8.545070  9.475533 10.409500  9.286114 
+     2818      9340      4523      6816      2277      8009      5783      3013      7101      4530 
+13.872833 11.178552  8.351745 14.538236  9.297607 14.084723 13.150345 12.610830 11.849929  9.055698 
+     9021      4511      2639      3377      6578      9347      3705      3533      1296      4350 
+14.696661 13.409034  6.615476  9.186711 11.994000 13.538754 10.331689 10.409042  7.635958 11.855424 
+     9397      4253      2655      7342      9292      3499      7364      8983      5650      2658 
+10.355468  9.412862 12.345173 11.166414 10.279632 13.276526 14.172136 10.992000 14.273533 13.396156 
+     8188      4410      9508      8707      1499      8477      1288      6291      1224      4292 
+12.740967 13.472976 13.574657 12.883938  7.660358 12.522243 13.510800 10.107314  9.715447 12.864354 
+     8857      3967      6415      1317      2629      4223      1462      9550      6464      4931 
+15.296938 12.035077 11.860204 13.177687 14.907772 14.622622 10.495561 11.089138  7.091621 13.790810 
+     5937      7919      3716      1909      2651      2467      1374      6600      5667      5720 
+16.775966 14.849973 10.368659 14.423321 11.084316 10.147519  9.728464 11.703893 13.778230 14.282302 
+     3498      3881      2995      5838      3688      9158      8946      7232      2917      6170 
+16.390453 11.949220  9.546109 13.689613 14.656256  8.545170 10.375086 12.542635  7.978953 14.181048 
+     8165      9104      2030      8150      4042      8357      8531      6074      4420      1906 
+16.451224 16.832109 12.078191 14.852364 14.315422 14.381852 13.528683 13.779089 13.874156 15.983170 
+     3992      3999      4173      4325      5761      6484      6897      7635      7734      8175 
+14.645208 10.944043 12.724659 13.240000 11.138058 12.912400 15.097633 15.065529 10.559636 11.698091 
+     8874      9225      2458      3610      5640      3838      9359      2208      6089      1477 
+12.055028 14.667333 13.985684 15.354953 13.160105 16.062815 15.270623 15.404667 15.569576 14.228468 
+     2768      3039      5819      6397      1308      1433      1436      1461      1637      1942 
+10.886920 16.963857 12.138900 12.796100 16.255500 19.719143 18.111614 16.842636  7.024111 18.110897 
+     1946      2336      2526      2626      2755      2771      2990      3020      3152      3332 
+12.908436 16.517702 17.053000 13.396605 16.476511 11.844109 18.447917 14.395271 13.209038 14.278158 
+     3351      3427      3657      4642      5404      5619      6366      6469      7011      7276 
+11.465179 19.715592  9.521176 14.599033 15.414982 15.416242 15.656397 18.455719 13.813576 12.679396 
+     7332      7345      7688      7697      8193      8202      8627      8628      9198      9586 
+14.636104 11.338554 18.422315 15.721781 16.232256 11.712429 10.883717 16.528377 19.092290 14.863695 
+> 
+> length(cathRegC); length(pubRegC)
+[1] 70
+[1] 90
+
+# you can treat the output of lmList as if it were data--i.e., attributes
+# of each school; that's what we called the "smart-first-year-student" approach
+# and we can imitate the results of the full lme analysis
+
+> pubcoef= coef(pubRegC)
+>  cathcoef= coef(cathRegC)
+> summary(pubcoef)
+  (Intercept)          cses       
+ Min.   : 4.240   Min.   :-1.014  
+ 1st Qu.: 9.719   1st Qu.: 1.695  
+ Median :11.708   Median : 2.922  
+ Mean   :11.389   Mean   : 2.772  
+ 3rd Qu.:13.197   3rd Qu.: 3.824  
+ Max.   :18.111   Max.   : 6.266  
+> summary(cathcoef)
+  (Intercept)          cses        
+ Min.   : 7.336   Min.   :-2.0150  
+ 1st Qu.:13.202   1st Qu.: 0.5698  
+ Median :14.467   Median : 1.5233  
+ Mean   :14.204   Mean   : 1.4685  
+ 3rd Qu.:15.901   3rd Qu.: 2.4595  
+ Max.   :19.719   Max.   : 5.2575  
+> # so we see Cath has higher typical (mean or median) outcome and lower slope
+> # Cath good on both counts
+
+> #now create boxplots of level and slope side-by-side for each sector, shown in class
+>  # boxplot posted at http://www-stat.stanford.edu/~rag/stat209/hsbsfysboxplotC.pdf
+> par( mfrow = c(1,2)) # opens a graphics window, creates the figure shown in lecture
+> boxplot(cathcoef[,1], pubcoef[,1], main = 'Intercepts', names = c('Catholic', 'Public'))
+> boxplot(cathcoef[,2], pubcoef[,2], main = 'Slopes', names = c('Catholic', 'Public'))
+
+##set up for the lme analysis
+
+# order the sector factor
+> Bryk$sector = factor(Bryk$sector, levels = c('Public', 'Catholic'))
+> Bryk$sector[1:10]
+ [1] Public Public Public Public Public Public Public Public Public Public
+Levels: Public Catholic
+
+#fit the random-effects models, obtaining coefficients etc presented in class-handout
+# on 1/29 and in the various references using the HSB data
+
+> bryklme = lme(mathach ~ meanses*cses + sector*cses, random = ~ cses|school, data = Bryk)
+# lme works from the combined model (class or p.5 lab script)
+# main effects meanses cses sector, two product terms grouping by school
+
+> summary(bryklme)
+Linear mixed-effects model fit by REML
+ Data: Bryk 
+       AIC      BIC    logLik
+  46523.66 46592.45 -23251.83
+
+Random effects:
+ Formula: ~cses | school
+ Structure: General positive-definite, Log-Cholesky parametrization
+            StdDev    Corr  
+(Intercept) 1.5426150 (Intr)
+cses        0.3182015 0.391 
+Residual    6.0597955       
+
+Fixed effects: mathach ~ meanses * cses + sector * cses 
+                        Value Std.Error   DF  t-value p-value
+(Intercept)         12.127931 0.1992919 7022 60.85510   0e+00
+meanses              5.332875 0.3691684  157 14.44564   0e+00
+cses                 2.945041 0.1556005 7022 18.92694   0e+00
+sectorCatholic       1.226579 0.3062733  157  4.00485   1e-04
+meanses:cses         1.039230 0.2988971 7022  3.47688   5e-04
+cses:sectorCatholic -1.642674 0.2397800 7022 -6.85076   0e+00
+ Correlation: 
+                    (Intr) meanss cses   sctrCt mnss:c
+meanses              0.256                            
+cses                 0.075  0.019                     
+sectorCatholic      -0.699 -0.356 -0.053              
+meanses:cses         0.019  0.074  0.293 -0.026       
+cses:sectorCatholic -0.052 -0.027 -0.696  0.077 -0.351
+
+Standardized Within-Group Residuals:
+       Min         Q1        Med         Q3        Max 
+-3.1592608 -0.7231893  0.0170471  0.7544510  2.9582205 
+
+Number of Observations: 7185
+Number of Groups: 160 
+> 
+# so Level II model for mean outcome (intercepts) sectorCathlolic 1.23 (.31)
+#Cath significantly better
+# so Level II model for slopes cses:sectorCathlolic -1.64 (.24)
+#Cath significantly better (egalitarian)
+##########################################
+end main output Lab2 nlme version, see further comments in lab text
+and also see lmer version
+class handout links fixed effects with model parameters
+see also http://www-stat.stanford.edu/~rag/stat209/hsbanalyses.pdf
+other treatments of the HSB data from HLM manual, Bryk text, Singer etc
+skipped over in class
+we will revisit lme lmer etc week 9 for growth curve models, longitudinal data

@@ -1,0 +1,83 @@
+Stat209/Ed260 D Rogosa   1/26/13
+
+Assignment 3.  Week 3 Path Analysis and Friends
+
+----------------------------
+
+Problem 3 below is an "enrichment" item, and you may want
+to look at the solution when posted, addressing the student 
+questions about latent variable models, e.g., How does structural 
+equation model (latent vars) methods provide a correction for 
+measurement error?
+-------------------------------------
+
+problem 1. Freedman, Blau-Duncan example in class handout, 
+Freedman text
+Ch6 (revised) or Freedman links "Stat Models for Causation" (pp3-4)
+
+Replicate class handout computations for the path analysis
+
+
+plus questions from Freedman text
+  scan of pp.80-81 at  (pp86-7 revised ed)
+  http://www-stat.stanford.edu/~rag/stat209/DAFtextp8081.pdf
+  includes standardization material on class handout.
+Freedman pp80-1 (set A)
+prob 1
+prob 5
+prob 6
+prob 8
+freedman Set E, p.97 prob 4(a,b) (p.103 revised)
+--------------------------------------------------------------
+
+problem 2
+freedman p.101 prob 5 (page 107 in revised version)
+
+Causal Models of Publishing Productivity
+
+This Homework 3 problem considers one of the path
+analysis models from "Causal Models of Publishing
+Productivity in Psychology", Rogers & Maranto,
+J. Applied Psychology, 1989, 74(4), 636-649.
+direct link to paper
+http://content.apa.org/journals/apl/74/4/636.pdf
+
+The path analysis conducted by the authors
+from a sample of 86 men and 76 women is shown
+in p.101 of Freedman's text and on page 647
+of the publication; that page also exists at
+http://www-stat.stanford.edu/~rag/stat209/pathpage647.pdf
+
+All the problem asks you to do is look at and consider the usefulness
+of this analysis.
+
+The diagram provides estimates of supposed causal effects ("causal
+model of publishing" is the article); it displays regression coeffs
+, with coefficient estimates shown on the edges.  
+Consider a "productive
+researcher" to be defined in terms of the number of publications and the
+number of cites.  The good news is that ability "affects" pubs and cites with
+a positive coefficient in each case.  Therefore, higher ability leads to a
+more "productive researcher", according to the causal path gospel.
+Some bad news is that sex is a predictor of pubs with a large coefficient
+value.  However, it is likely that there are confounding variables between
+sex and pubs.
+
+---------------------------------------------------------------------------
+ENRICHMENT ITEM, Structural Equation Models
+
+Problem 3
+Method-of-moments for two-variable, two-indicator model
+
+For the Structural Equation Models handout from Joreskog
+book, obtain parameter estimates for the no-correlated error 
+version (9 parameters, top covariance matrix) in terms of the 
+sample variance and covariances among the four indicators (y_ij).
+Brute force substitution will get you a non-optimal estimate,
+suffices for instructional purposes.
+------------------
+solution gives a nicely formatted solution
+http://www-stat.stanford.edu/~rag/stat209/hw3p5.pdf
+------------------
+end HW3 2013
+
